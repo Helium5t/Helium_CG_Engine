@@ -6,7 +6,10 @@ var gl = null,
 	imgtx = null,
 	skyboxLattx = null,
 	skyboxTbtx = null;
-	
+	skyboxFrtx = null;
+	skyboxTptx = null;
+	skyboxLftx = null;
+	skyboxRgtx = null;
 var projectionMatrix, 
 	perspectiveMatrix,
 	viewMatrix,
@@ -33,6 +36,8 @@ var lookRadius = 10.0;
 
 
 var keys = [];
+ 
+
 var vz = 0.0;
 var rvy = 0.0;
 
@@ -44,8 +49,9 @@ var keyFunctionDown =function(e) {
   	keys[e.keyCode] = true;
 	switch(e.keyCode) {
 	  case 37:
-//console.log("KeyUp   - Dir LEFT");
+console.log("KeyUp   - Dir LEFT");
 		rvy = rvy + 1.0;
+		//vz = vz-1;
 		break;
 	  case 39:
 //console.log("KeyUp   - Dir RIGHT");
@@ -53,7 +59,7 @@ var keyFunctionDown =function(e) {
 		break;
 	  case 38:
 //console.log("KeyUp   - Dir UP");
-		vz = vz - 1.0;
+		vz = vz - 0.4;
 		break;
 	  case 40:
 //console.log("KeyUp   - Dir DOWN");
@@ -63,21 +69,72 @@ var keyFunctionDown =function(e) {
   }
 }
 
-var keyFunctionUp =function(e) {
-  if(keys[e.keyCode]) {
-  	keys[e.keyCode] = false;
-	switch(e.keyCode) {
-	  case 37:
+function sleep(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+var keyFunctionUp = async function(e) {
+	//console.log("FIRED");
+	var currentTime = (new Date).getTime();
+	var deltaT;
+	if(lastUpdateTime){
+		deltaT = (currentTime - lastUpdateTime) / 1000.0;
+	} else {
+		deltaT = 1/50;
+	}
+	lastUpdateTime = currentTime;
+
+  	if(keys[e.keyCode]) {
+  		keys[e.keyCode] = false;
+		switch(e.keyCode) {
+	  		case 37:
 //console.log("KeyDown  - Dir LEFT");
 		rvy = rvy - 1.0;
+		//ruota la barca di carAngle gradi indietro
+		//carAngle;
+		var numberOfDelta = carAngle*5;
+		var deltaAngle = carAngle/numberOfDelta;
+		console.log(carAngle)
+		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) != parseFloat(0.0);i++){
+			
+			carAngle = (carAngle-deltaAngle);
+			console.log(carAngle);
+
+			await sleep(2000/numberOfDelta);
+		}
+		
+
+		// carAngle = carAngle-deltaAngle;
+		// await sleep(2000);
+
+		// carAngle = carAngle-deltaAngle;
+		// await sleep(2000);
+
+		// carAngle = carAngle-deltaAngle;
+		
+		//rvy = rvy .0;
+
+
+		//vz = vz+1;
 		break;
 	  case 39:
 //console.log("KeyDown - Dir RIGHT");
 		rvy = rvy + 1.0;
+
+		var numberOfDelta = 0.0-carAngle*5; // TOP QUALITY MATH HERE
+		var deltaAngle = carAngle/numberOfDelta;
+		console.log(carAngle)
+		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) != parseFloat(0.0);i++){
+			
+			carAngle = (carAngle-deltaAngle);
+			console.log(carAngle);
+
+			await sleep(2000/numberOfDelta);
+		}
 		break;
 	  case 38:
 //console.log("KeyDown - Dir UP");
-		vz = vz + 1.0;
+		vz = vz + 0.4;
 		break;
 	  case 40:
 //console.log("KeyDown - Dir DOWN");
@@ -248,8 +305,11 @@ function main(){
 
 		// Loading other faces of the skybox
 		skyboxFront = new OBJ.Mesh(trackNfieldObjStr);
+		skyboxLeft = new OBJ.Mesh(trackNfieldObjStr);
+		skyboxRight = new OBJ.Mesh(trackNfieldObjStr);
+		skyboxTop = new OBJ.Mesh(trackNfieldObjStr);
 		
-		
+
 		// Create the textures
 		imgtx = new Image();
 		imgtx.txNum = 0;
@@ -267,9 +327,26 @@ function main(){
 		skyboxTbtx.src = FieldTextureData;
 
 		skyboxFrtx = new Image();
-		skyboxTbtx.txNum = 3;
-		skyboxTbtx.onload = textureLoaderCallback;
-		skyboxTbtx.src = frontTextureData;
+		skyboxFrtx.txNum = 3;
+		skyboxFrtx.onload = textureLoaderCallback;
+		skyboxFrtx.src = frontTextureData;
+
+		skyboxLftx = new Image();
+		skyboxLftx.txNum = 4;
+		skyboxLftx.onload = textureLoaderCallback;
+		skyboxLftx.src = leftTextureData;
+		
+		skyboxRgtx = new Image();
+		skyboxRgtx.txNum = 5;
+		skyboxRgtx.onload = textureLoaderCallback;
+		skyboxRgtx.src = rightTextureData;
+		
+		skyboxTptx = new Image();
+		skyboxTptx.txNum = 6;
+		skyboxTptx.onload = textureLoaderCallback;
+		skyboxTptx.src = topTextureData;
+		
+
 		
 		// links mesh attributes to shader attributes
 		program.vertexPositionAttribute = gl.getAttribLocation(program, "in_pos");
@@ -290,6 +367,9 @@ function main(){
 		OBJ.initMeshBuffers(gl, carMesh);
 		OBJ.initMeshBuffers(gl, skybox);
 		OBJ.initMeshBuffers(gl, skyboxFront);
+		OBJ.initMeshBuffers(gl, skyboxLeft);
+		OBJ.initMeshBuffers(gl, skyboxRight);
+		OBJ.initMeshBuffers(gl, skyboxTop);
 
 		
 		
@@ -361,6 +441,12 @@ function drawScene() {
 		// call user procedure for world-view-projection matrices
 		wvpMats = worldViewProjection(carX, carY, carZ, carAngle, cx, cy, cz);
 
+
+		// //re align boat
+		// if(keys[37] == false){
+		// 	carAngle = carAngle*((lastUpdateTime+3000)-currentTime)
+		// }
+
 		viewMatrix = wvpMats[1];
 
 		perspectiveMatrix = projection = utils.MakePerspective(60, aspectRatio, 0.1, 1000.0);
@@ -369,12 +455,14 @@ function drawScene() {
 		
 		// computing car velocities
 		carAngVel = mAS * deltaT * rvy;	
+		//console.log(carAngVel)
 		
 		vz = -vz;
 		// = 0.8 * deltaT * 60 * vz;
 		if(vz > 0.1) {
 		  if(preVz > 0.1) {
 			carLinAcc = carLinAcc + ATur * deltaT;
+			//console.log(ATur);
 			if(carLinAcc > mAT) carLinAcc = mAT;
 		  } else if(carLinAcc < sAT) carLinAcc = sAT;
 		} else if(vz > -0.1) {
@@ -391,13 +479,21 @@ function drawScene() {
 		carLinVel = carLinVel * Math.exp(Tfric * deltaT) - deltaT * carLinAcc;
 		
 		
+		if(carLinVel>0.3 ){
+			carLinVel = 0.3;
+		}
+		if (carLinVel < (0.0-0.3)) {
+			carLinVel = 0.0-0.3; // TOP QUALITY MATH HERE
+		}
+		//console.log(carLinVel)
+		
 		// Magic for moving the car
 		worldMatrix = utils.multiplyMatrices(dvecmat, utils.MakeScaleMatrix(1.0));
 		xaxis = [dvecmat[0],dvecmat[4],dvecmat[8]];
 		yaxis = [dvecmat[1],dvecmat[5],dvecmat[9]];
 		zaxis = [dvecmat[2],dvecmat[6],dvecmat[10]];
 		
-		if(rvy != 0) {
+		if(rvy != 0) {	
 			qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(carAngVel));
 			newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);
 			R11=newDvecmat[10];R12=newDvecmat[8];R13=newDvecmat[9];
@@ -423,6 +519,7 @@ function drawScene() {
 //			roll      = phi/Math.PI*180;
 //			angle     = psi/Math.PI*180;
 			carAngle  = psi/Math.PI*180;
+			//console.log(carAngle);
 		}
 		// spring-camera system
 			// target coordinates
@@ -473,20 +570,69 @@ function drawScene() {
 		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxFront.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	    gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.textureBuffer);
 	    gl.vertexAttribPointer(program.textureCoordAttribute, skyboxFront.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		
 		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.normalBuffer);
 		gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
-		 
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skybox.indexBuffer);
-
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
 		//translate the image of y: 30 z: -100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,30,-100),utils.multiplyMatrices( utils.MakeRotateXMatrix(-90) ,utils.MakeScaleMatrix(200.0))));  		
-
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 3);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+		// draws the skybox left
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxLeft.vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxLeft.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	    gl.bindBuffer(gl.ARRAY_BUFFER, skyboxLeft.textureBuffer);
+	    gl.vertexAttribPointer(program.textureCoordAttribute, skyboxLeft.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxLeft.normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxLeft.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxLeft.indexBuffer);
+
+		//translate the image of y: 30 x: -100 , rotated by 90 degree on the X and y axis and then scaled up by 200
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(-100,30,0),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(200.0))));  		
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniform1i(program.textureUniform, 4);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+		// draws the skybox right
+				
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxRight.vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxRight.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxRight.textureBuffer);
+		gl.vertexAttribPointer(program.textureCoordAttribute, skyboxRight.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxRight.normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxRight.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxRight.indexBuffer);
+
+		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(100,30,0),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(200.0))));  		
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniform1i(program.textureUniform, 5);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+		// draws the skybox top
+			
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxTop.vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxTop.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxTop.textureBuffer);
+		gl.vertexAttribPointer(program.textureCoordAttribute, skyboxTop.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxTop.normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxTop.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxTop.indexBuffer);
+
+		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,170,0),utils.multiplyMatrices( utils.MakeRotateXMatrix(90) ,utils.MakeScaleMatrix(200.0))));  		
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniform1i(program.textureUniform, 6);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 
