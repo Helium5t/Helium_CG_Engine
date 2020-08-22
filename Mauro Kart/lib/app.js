@@ -24,7 +24,7 @@ var angle = 0.01;
 var roll = 0.01;
 
 var carAngle = 0;
-var carX = 169;
+var carX = -0.0;
 var carY = -0.7;
 var carZ = -67;
 
@@ -37,6 +37,9 @@ var vz = 0.0;
 var rvy = 0.0;
 
 var keyFunctionDown =function(e) {
+	console.log('X:' + carX);
+	console.log('Y:' + carY);
+	console.log('Z:' + carZ);
   if(!keys[e.keyCode]) {
   	keys[e.keyCode] = true;
 	switch(e.keyCode) {
@@ -242,6 +245,10 @@ function main(){
 
 		carMesh = new OBJ.Mesh(boatObjStr);
 		skybox = new OBJ.Mesh(trackNfieldObjStr);
+
+		// Loading other faces of the skybox
+		skyboxFront = new OBJ.Mesh(trackNfieldObjStr);
+		
 		
 		// Create the textures
 		imgtx = new Image();
@@ -258,6 +265,11 @@ function main(){
 		skyboxTbtx.txNum = 2;
 		skyboxTbtx.onload = textureLoaderCallback;
 		skyboxTbtx.src = FieldTextureData;
+
+		skyboxFrtx = new Image();
+		skyboxTbtx.txNum = 3;
+		skyboxTbtx.onload = textureLoaderCallback;
+		skyboxTbtx.src = frontTextureData;
 		
 		// links mesh attributes to shader attributes
 		program.vertexPositionAttribute = gl.getAttribLocation(program, "in_pos");
@@ -277,6 +289,7 @@ function main(){
 		
 		OBJ.initMeshBuffers(gl, carMesh);
 		OBJ.initMeshBuffers(gl, skybox);
+		OBJ.initMeshBuffers(gl, skyboxFront);
 
 		
 		
@@ -446,16 +459,38 @@ function drawScene() {
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
 		 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skybox.indexBuffer);		
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.MakeScaleMatrix(200.0));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.MakeScaleNuMatrix(10.0,10.0,1000.0));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 2);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
 		gl.uniform1i(program.textureUniform, 1);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-		
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
+		//gl.uniform1i(program.textureUniform, 1);
+		//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
-		// draws the request
+		// draws the skybox front
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxFront.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	    gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.textureBuffer);
+	    gl.vertexAttribPointer(program.textureCoordAttribute, skyboxFront.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		 
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skybox.indexBuffer);
+
+		//translate the image of y: 30 z: -100 , rotated by 90 degree on the X axis and then scaled up by 200
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,30,-100),utils.multiplyMatrices( utils.MakeRotateXMatrix(-90) ,utils.MakeScaleMatrix(200.0))));  		
+
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniform1i(program.textureUniform, 3);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+
+		// draws the Ship
 		gl.bindBuffer(gl.ARRAY_BUFFER, carMesh.vertexBuffer);
 		gl.vertexAttribPointer(program.vertexPositionAttribute, carMesh.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	    gl.bindBuffer(gl.ARRAY_BUFFER, carMesh.textureBuffer);
@@ -469,8 +504,8 @@ function drawScene() {
 		gl.uniform1i(program.textureUniform, 0);
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
 
-		// Aligning the Ship
 
+		// Aligning the Ship
 		var alignMatrix = utils.MakeScaleMatrix(0.01);
 		alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
 
