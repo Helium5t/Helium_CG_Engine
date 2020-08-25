@@ -42,14 +42,14 @@ var vz = 0.0;
 var rvy = 0.0;
 
 var keyFunctionDown =function(e) {
-	console.log('X:' + carX);
-	console.log('Y:' + carY);
-	console.log('Z:' + carZ);
+	//console.log('X:' + carX);
+	//console.log('Y:' + carY);
+	//console.log('Z:' + carZ);
   if(!keys[e.keyCode]) {
   	keys[e.keyCode] = true;
 	switch(e.keyCode) {
 	  case 37:
-console.log("KeyUp   - Dir LEFT");
+//console.log("KeyUp   - Dir LEFT");
 		rvy = rvy + 1.0;
 		//vz = vz-1;
 		break;
@@ -94,11 +94,11 @@ var keyFunctionUp = async function(e) {
 		//carAngle;
 		var numberOfDelta = carAngle*5;
 		var deltaAngle = carAngle/numberOfDelta;
-		console.log(carAngle)
+		//console.log(carAngle)
 		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) != parseFloat(0.0);i++){
 			
 			carAngle = (carAngle-deltaAngle);
-			console.log(carAngle);
+			//console.log(carAngle);
 
 			await sleep(2000/numberOfDelta);
 		}
@@ -123,11 +123,11 @@ var keyFunctionUp = async function(e) {
 
 		var numberOfDelta = 0.0-carAngle*5; // TOP QUALITY MATH HERE
 		var deltaAngle = carAngle/numberOfDelta;
-		console.log(carAngle)
+		//console.log(carAngle)
 		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) != parseFloat(0.0);i++){
 			
 			carAngle = (carAngle-deltaAngle);
-			console.log(carAngle);
+			//console.log(carAngle);
 
 			await sleep(2000/numberOfDelta);
 		}
@@ -519,6 +519,12 @@ function drawScene() {
 //			roll      = phi/Math.PI*180;
 //			angle     = psi/Math.PI*180;
 			carAngle  = psi/Math.PI*180;
+			if (Math.round(parseFloat(carAngle)) > parseFloat(90.0)) {
+				carAngle = 90.0;
+			}
+			if (Math.round(parseFloat(carAngle)) < parseFloat(0.0-90.0)) {
+				carAngle = 0.0-90.0;
+			}
 			//console.log(carAngle);
 		}
 		// spring-camera system
