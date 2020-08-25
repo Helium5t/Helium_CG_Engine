@@ -95,13 +95,17 @@ var keyFunctionUp = async function(e) {
 		var numberOfDelta = carAngle*5;
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) != parseFloat(0.0);i++){
+		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) > parseFloat(0.0);i++){
 			
 			carAngle = (carAngle-deltaAngle);
-			//console.log(carAngle);
+			console.log(carAngle);
 
 			await sleep(2000/numberOfDelta);
 		}
+
+		carAngle = 0.0;
+
+		//console.log("FINAL ANGLE (left): " + carAngle);
 		
 
 		// carAngle = carAngle-deltaAngle;
@@ -124,13 +128,18 @@ var keyFunctionUp = async function(e) {
 		var numberOfDelta = 0.0-carAngle*5; // TOP QUALITY MATH HERE
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) != parseFloat(0.0);i++){
+		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) < parseFloat(0.0);i++){
 			
 			carAngle = (carAngle-deltaAngle);
 			//console.log(carAngle);
 
 			await sleep(2000/numberOfDelta);
 		}
+
+		carAngle = 0.0;
+
+		//console.log("FINAL ANGLE (right): " + carAngle);
+
 		break;
 	  case 38:
 //console.log("KeyDown - Dir UP");
