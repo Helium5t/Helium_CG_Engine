@@ -771,6 +771,7 @@ function drawScene() {
 		gl.uniform1i(program.textureUniform, 6);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
+
 		// draws the rock
 		gl.bindBuffer(gl.ARRAY_BUFFER, rock.vertexBuffer);
 		gl.vertexAttribPointer(program.vertexPositionAttribute, rock.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -788,11 +789,16 @@ function drawScene() {
 		// Aligning the Rock
 		var alignMatrix = utils.MakeScaleMatrix(1.5);
 		alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
-
-		WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix),alignMatrix);
+// qiZhou aooo
+		var rockx = 0;
+		var rocky = 0;
+		var rockz = 56;
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
 		gl.drawElements(gl.TRIANGLES, rock.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+
 
 		// draws the Ship
 		gl.bindBuffer(gl.ARRAY_BUFFER, carMesh.vertexBuffer);
