@@ -403,7 +403,8 @@ function main(){
 		gLightDir = utils.multiplyMatrixVector(skyboxWM, gLightDir);
 
 		
-
+		initRock1();
+		initRock2();
 
 		drawScene();
 	}else{
@@ -436,8 +437,76 @@ var carLinVel = 0.0;
 var carAngVel = 0.0;
 var preVz = 0;
 
-var badZ = 70;
-var badX = 15;
+//var aRock;
+
+var rocks1 = [];
+var rocks2 = [];
+
+var deathRadius = 2.0;
+
+
+function initRock1() {
+	for (let i = 0; i < 200; i ++) {
+		rocks1[i] = [];
+		for (let j = 0; j < 100; j++) {
+			rocks1[i][j] = true;
+			//rocks2[i][j] = true;
+		}
+	}
+}
+
+function initRock2() {
+	for (let i = 0; i < 200; i ++) {
+		rocks2[i] = [];
+		for (let j = 0; j < 100; j++) {
+			//rocks1[i][j] = true;
+			rocks2[i][j] = true;
+		}
+	}
+}
+
+function distance(pointX, pointY, boatX, boatY) {
+	return Math.sqrt(Math.pow(pointX - boatX, 2) + Math.pow(pointY - boatY, 2));
+}
+
+function checkDeath(roundedX, roundedZ) {
+	console.log("ROUNDEDX: " + roundedX + "\nROUNDEDZ: " + roundedZ + "\nZ%200: " + (roundedZ%200));
+	var offsetedX = roundedX + 100;
+	
+	if (roundedZ % 200 >= 100) { //use rocks2
+		for (i = 0; i < 200; i++) {
+			for (j = 0; j < 200; j++) {
+				if (rocks2[i][j]) {
+					var d = distance((i-100), j, roundedX, roundedZ);
+					
+					if (Math.round(parseFloat(d)) <= parseFloat(deathRadius)) {
+						// collision
+						console.log("/ndistance: " + d);
+						console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
+						console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
+					}
+				}
+				
+			}
+		}
+	} else { //use rocks1
+		for (i = 0; i < 200; i++) {
+			for (j = 0; j < 200; j++) {
+				if (rocks1[i][j]) {
+					var d = distance((i-100), j, roundedX, roundedZ);
+					
+					if (Math.round(parseFloat(d)) <= parseFloat(deathRadius)) {
+						// collision
+						console.log("/ndistance: " + d);
+						console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
+						console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
+					}
+				}
+				
+			}
+		}
+	}
+}
 
 
 function drawScene() {
@@ -565,15 +634,17 @@ function drawScene() {
 		carX -= delta[0];
 		carZ -= delta[2];
 
-		console.log("X: " + carX + "\nZ: " + carZ + "\n")
+		//console.log("X: " + carX + "\nZ: " + carZ + "\n")
 
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);	
 
-		if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
-			console.log("X: " + badX + "\nZ: "  + "\n");
-			console.log("LOST THE BOAT\n");
-			window.location.reload(false);
-		}
+		// if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
+		// 	console.log("X: " + badX + "\nZ: "  + "\n");
+		// 	console.log("LOST THE BOAT\n");
+		// 	window.location.reload(false);
+		// }
+
+		checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
 
 		// draws the skybox
 		gl.bindBuffer(gl.ARRAY_BUFFER, skybox.vertexBuffer);
@@ -691,5 +762,5 @@ function drawScene() {
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
 		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 		
-		window.requestAnimationFrame(drawScene);		
+		window.requestAnimationFrame(drawScene);	
 }
