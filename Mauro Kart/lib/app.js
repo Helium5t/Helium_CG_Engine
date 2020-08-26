@@ -42,9 +42,9 @@ var vz = 0.0;
 var rvy = 0.0;
 
 var keyFunctionDown =function(e) {
-	//console.log('X:' + carX);
-	//console.log('Y:' + carY);
-	//console.log('Z:' + carZ);
+	// console.log('X:' + carX);
+	// console.log('Y:' + carY);
+	// console.log('Z:' + carZ);
   if(!keys[e.keyCode]) {
   	keys[e.keyCode] = true;
 	switch(e.keyCode) {
@@ -552,6 +552,12 @@ function drawScene() {
 		
 		// car motion
 		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
+		if(carX<-100 && delta[0]>0){
+			delta[0] = 0
+		}
+		if(carX>100 && delta[0]<0){
+			delta[0] = 0
+		}
 		carX -= delta[0];
 		carZ -= delta[2];
 
