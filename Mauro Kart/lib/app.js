@@ -171,6 +171,31 @@ function doResize() {
     }
 }
 
+function alert2(message, title, buttonText) {
+
+    buttonText = (buttonText == undefined) ? "Ok" : buttonText;
+    title = (title == undefined) ? "The page says:" : title;
+
+    var div = $('#dialog1');
+    div.html(message);
+    div.attr('title', title);
+    div.dialog({
+        autoOpen: true,
+        modal: true,
+        draggable: false,
+        resizable: false,
+        buttons: [{
+            text: buttonText,
+            click: function () {
+				$(this).dialog("close");
+				window.location.reload(false);
+
+                div.remove();
+            }
+        }]
+    });
+}
+
 		
 // Vertex shader
 var vs = `#version 300 es
@@ -563,8 +588,11 @@ function drawScene() {
 		if(carX>100 && delta[0]<0){
 			delta[0] = 0
 		}
+
 		carX -= delta[0];
 		carZ -= delta[2];
+
+
 
 		console.log("X: " + carX + "\nZ: " + carZ + "\n")
 
@@ -573,7 +601,8 @@ function drawScene() {
 		if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
 			console.log("X: " + badX + "\nZ: "  + "\n");
 			console.log("LOST THE BOAT\n");
-			window.location.reload(false);
+			alert2("You lost","","Re join")
+
 		}
 
 		// draws the skybox
@@ -694,3 +723,4 @@ function drawScene() {
 		
 		window.requestAnimationFrame(drawScene);		
 }
+

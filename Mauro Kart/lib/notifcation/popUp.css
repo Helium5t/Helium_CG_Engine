@@ -1,0 +1,21 @@
+.popup {
+    position: fixed;
+    display: none;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  
+.popup-content {
+    position: absolute;
+    color: red;
+    background: green;
+    width: 300px;
+    left: calc(50% - 150px);
+    height: 100px;
+    top: calc(50% - 50px);
+    z-index: 2;
+    }
