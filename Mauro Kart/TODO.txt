@@ -3,3 +3,5 @@
 [ ] Correzione Texture (nave + skybox)
 [X] Nave sul bordo (Fixare limiti mappa)
 [ ] Loading Rocce
+[ ] Shader
+[ ] Interazione Web
