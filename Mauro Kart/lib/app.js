@@ -552,6 +552,7 @@ function drawScene() {
 		
 		// car motion
 		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
+		
 		if(carX<-100 && delta[0]>0){
 			delta[0] = 0
 		}
