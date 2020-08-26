@@ -98,7 +98,7 @@ var keyFunctionUp = async function(e) {
 		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) > parseFloat(0.0);i++){
 			
 			carAngle = (carAngle-deltaAngle);
-			console.log(carAngle);
+			//console.log(carAngle);
 
 			await sleep(2000/numberOfDelta);
 		}
@@ -129,7 +129,7 @@ var keyFunctionUp = async function(e) {
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
 		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) < parseFloat(0.0);i++){
-			
+
 			carAngle = (carAngle-deltaAngle);
 			//console.log(carAngle);
 
@@ -436,6 +436,10 @@ var carLinVel = 0.0;
 var carAngVel = 0.0;
 var preVz = 0;
 
+var badZ = 70;
+var badX = 15;
+
+
 function drawScene() {
 		// compute time interval
 		var currentTime = (new Date).getTime();
@@ -562,7 +566,15 @@ function drawScene() {
 		carX -= delta[0];
 		carZ -= delta[2];
 
-		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);		
+		console.log("X: " + carX + "\nZ: " + carZ + "\n")
+
+		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);	
+
+		if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
+			console.log("X: " + badX + "\nZ: "  + "\n");
+			console.log("LOST THE BOAT\n");
+			window.location.reload(false);
+		}
 
 		// draws the skybox
 		gl.bindBuffer(gl.ARRAY_BUFFER, skybox.vertexBuffer);
