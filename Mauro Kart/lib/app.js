@@ -2,6 +2,7 @@ var canvas;
 var gl = null,
 	program = null,
 	carMesh = null,
+	rock = null,
 	skybox = null,
 	imgtx = null,
 	skyboxLattx = null,
@@ -10,6 +11,7 @@ var gl = null,
 	skyboxTptx = null;
 	skyboxLftx = null;
 	skyboxRgtx = null;
+	rocktx = null;
 var projectionMatrix, 
 	perspectiveMatrix,
 	viewMatrix,
@@ -335,6 +337,7 @@ function main(){
 		// Load mesh using the webgl-obj-loader library
 
 		carMesh = new OBJ.Mesh(boatObjStr);
+		rock = new OBJ.Mesh(rockObjStr)
 		skybox = new OBJ.Mesh(trackNfieldObjStr);
 
 		// Loading other faces of the skybox
@@ -380,7 +383,10 @@ function main(){
 		skyboxTptx.onload = textureLoaderCallback;
 		skyboxTptx.src = topTextureData;
 		
-
+		rocktx = new Image();
+		rocktx.txNum = 7;
+		rocktx.onload = textureLoaderCallback;
+		rocktx.src = RockTextureData;
 		
 		// links mesh attributes to shader attributes
 		program.vertexPositionAttribute = gl.getAttribLocation(program, "in_pos");
@@ -397,7 +403,7 @@ function main(){
 		program.textureUniform = gl.getUniformLocation(program, "u_texture");
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
 //		program.ambFact = gl.getUniformLocation(program, "ambFact");
-		
+		OBJ.initMeshBuffers(gl, rock)
 		OBJ.initMeshBuffers(gl, carMesh);
 		OBJ.initMeshBuffers(gl, skybox);
 		OBJ.initMeshBuffers(gl, skyboxFront);
@@ -764,6 +770,28 @@ function drawScene() {
 		gl.uniform1i(program.textureUniform, 6);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
+		// draws the rock
+		gl.bindBuffer(gl.ARRAY_BUFFER, rock.vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, rock.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	    gl.bindBuffer(gl.ARRAY_BUFFER, rock.textureBuffer);
+	    gl.vertexAttribPointer(program.textureCoordAttribute, rock.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, rock.normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, rock.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		 
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock.indexBuffer);		
+
+		gl.uniform1i(program.textureUniform, 7);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
+
+		// Aligning the Rock
+		var alignMatrix = utils.MakeScaleMatrix(1.5);
+		alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
+
+		WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix),alignMatrix);
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
+		gl.drawElements(gl.TRIANGLES, rock.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
 		// draws the Ship
 		gl.bindBuffer(gl.ARRAY_BUFFER, carMesh.vertexBuffer);
