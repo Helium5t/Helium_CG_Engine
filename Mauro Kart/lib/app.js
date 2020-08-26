@@ -41,7 +41,7 @@ var keys = [];
 var vz = 0.0;
 var rvy = 0.0;
 
-var keyFunctionDown =function(e) {
+var keyFunctionDown = function(e) {
 	// console.log('X:' + carX);
 	// console.log('Y:' + carY);
 	// console.log('Z:' + carZ);
@@ -95,7 +95,7 @@ var keyFunctionUp = async function(e) {
 		var numberOfDelta = carAngle*5;
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) > parseFloat(0.0);i++){
+		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) > parseFloat(0.0) && !(rvy); i++){
 			
 			carAngle = (carAngle-deltaAngle);
 			//console.log(carAngle);
@@ -128,7 +128,7 @@ var keyFunctionUp = async function(e) {
 		var numberOfDelta = 0.0-carAngle*5; // TOP QUALITY MATH HERE
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) < parseFloat(0.0);i++){
+		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) < parseFloat(0.0) && !(rvy);i++){
 
 			carAngle = (carAngle-deltaAngle);
 			//console.log(carAngle);
@@ -671,7 +671,8 @@ function drawScene() {
 		// 	window.location.reload(false);
 		// }
 
-		checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
+		//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
+		// ANNOTATION: DE-COMMENT THE ABOVE LINE
 
 		// draws the skybox
 		gl.bindBuffer(gl.ARRAY_BUFFER, skybox.vertexBuffer);
