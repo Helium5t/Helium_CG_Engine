@@ -103,7 +103,7 @@ var keyFunctionUp = async function(e) {
 			await sleep(2000/numberOfDelta);
 		}
 
-		carAngle = 0.0;
+		//carAngle = 0.0;
 
 		//console.log("FINAL ANGLE (left): " + carAngle);
 		
@@ -136,7 +136,7 @@ var keyFunctionUp = async function(e) {
 			await sleep(2000/numberOfDelta);
 		}
 
-		carAngle = 0.0;
+		//carAngle = 0.0;
 
 		//console.log("FINAL ANGLE (right): " + carAngle);
 
@@ -430,7 +430,7 @@ var sAS = 0.1;	// Not used yet
 var mAS = 108.0;
 var ASur = 1.0;	// Not used yet
 var ASdr = 0.5;	// Not used yet
-
+var skyboxScale = 800
 var carLinAcc = 0.0;
 var carLinVel = 0.0;
 var carAngVel = 0.0;
@@ -555,8 +555,6 @@ function drawScene() {
 		carX -= delta[0];
 		carZ -= delta[2];
 
-
-
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);		
 
 		// draws the skybox
@@ -589,8 +587,8 @@ function drawScene() {
 		gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
-		//translate the image of y: 30 z: -100 , rotated by 90 degree on the X axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,30,-100),utils.multiplyMatrices( utils.MakeRotateXMatrix(-90) ,utils.MakeScaleMatrix(200.0))));  		
+		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,30,1000),utils.multiplyMatrices( utils.MakeRotateXMatrix(-90) ,utils.MakeScaleMatrix(skyboxScale))));  		
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 3);
@@ -607,8 +605,8 @@ function drawScene() {
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxLeft.indexBuffer);
 
-		//translate the image of y: 30 x: -100 , rotated by 90 degree on the X and y axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(-100,30,0),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(200.0))));  		
+		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(-1000,30,0),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(skyboxScale))));  		
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 4);
@@ -626,7 +624,7 @@ function drawScene() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxRight.indexBuffer);
 
 		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(100,30,0),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(200.0))));  		
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(1000,30,0),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(skyboxScale))));  		
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 5);
@@ -644,7 +642,7 @@ function drawScene() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxTop.indexBuffer);
 
 		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,170,0),utils.multiplyMatrices( utils.MakeRotateXMatrix(90) ,utils.MakeScaleMatrix(200.0))));  		
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,170,0),utils.multiplyMatrices( utils.MakeRotateXMatrix(180) ,utils.MakeScaleMatrix(200.0))));  		
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 6);

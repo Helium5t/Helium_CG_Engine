@@ -1,5 +1,5 @@
 [ ] Logica di Gioco : Morte, Spawn, Collisione, Start, nuovo rettangolo
 [ ] Skybox : fronte, destra, sinistra
 [ ] Correzione Texture (nave + skybox)
-[ ] Nave sul bordo
+[/] Nave sul bordo (Fixare limiti mappa)
 [ ] Loading Rocce
