@@ -2,7 +2,7 @@ var canvas;
 var gl = null,
 	program = null,
 	carMesh = null,
-	rock = null,
+	rock = new Array(50).fill(null),
 	skybox = null,
 	imgtx = null,
 	skyboxLattx = null,
@@ -11,7 +11,7 @@ var gl = null,
 	skyboxTptx = null;
 	skyboxLftx = null;
 	skyboxRgtx = null;
-	rocktx = null;
+	rocktx = new Array(50).fill(null);
 var projectionMatrix, 
 	perspectiveMatrix,
 	viewMatrix,
@@ -337,7 +337,7 @@ function main(){
 		// Load mesh using the webgl-obj-loader library
 
 		carMesh = new OBJ.Mesh(boatObjStr);
-		rock = new OBJ.Mesh(rockObjStr)
+		rock[0] = new OBJ.Mesh(rockObjStr)
 		skybox = new OBJ.Mesh(trackNfieldObjStr);
 
 		// Loading other faces of the skybox
@@ -383,10 +383,10 @@ function main(){
 		skyboxTptx.onload = textureLoaderCallback;
 		skyboxTptx.src = topTextureData;
 		
-		rocktx = new Image();
-		rocktx.txNum = 7;
-		rocktx.onload = textureLoaderCallback;
-		rocktx.src = RockTextureData;
+		rocktx[0] = new Image();
+		rocktx[0].txNum = 7;
+		rocktx[0].onload = textureLoaderCallback;
+		rocktx[0].src = RockTextureData;
 		
 		// links mesh attributes to shader attributes
 		program.vertexPositionAttribute = gl.getAttribLocation(program, "in_pos");
@@ -403,7 +403,7 @@ function main(){
 		program.textureUniform = gl.getUniformLocation(program, "u_texture");
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
 //		program.ambFact = gl.getUniformLocation(program, "ambFact");
-		OBJ.initMeshBuffers(gl, rock)
+		OBJ.initMeshBuffers(gl, rock[0])
 		OBJ.initMeshBuffers(gl, carMesh);
 		OBJ.initMeshBuffers(gl, skybox);
 		OBJ.initMeshBuffers(gl, skyboxFront);
@@ -475,6 +475,39 @@ var rocks2 = [];
 
 var deathRadius = 2.0;
 
+// function generateRock(){
+// 	var angleX = Math.floor(Math.random() * 360);
+// 	var angleY = Math.floor(Math.random() * 360);
+// 	var angleZ = Math.floor(Math.random() * 360);
+
+// 	var rotatedMatrixRock = utils.multiplyMatrices(utils.MakeRotateZMatrix(angleZ),utils.multiplyMatrices(utils.MakeRotateYMatrix(angleY),utils.multiplyMatrices(utils.MakeRotateXMatrix(angleX),utils.identityMatrix)));
+
+// 	// draws the rock
+// 	gl.bindBuffer(gl.ARRAY_BUFFER, rock.vertexBuffer);
+// 	gl.vertexAttribPointer(program.vertexPositionAttribute, rock.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+// 	gl.bindBuffer(gl.ARRAY_BUFFER, rock.textureBuffer);
+// 	gl.vertexAttribPointer(program.textureCoordAttribute, rock.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	
+// 	gl.bindBuffer(gl.ARRAY_BUFFER, rock.normalBuffer);
+// 	gl.vertexAttribPointer(program.vertexNormalAttribute, rock.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		
+// 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock.indexBuffer);		
+
+// 	gl.uniform1i(program.textureUniform, 7);
+// 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
+
+
+// 	var alignMatrix = utils.MakeScaleMatrix(1.5);
+// 	alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
+// 	var rockx = 0;
+// 	var rocky = 0;
+// 	var rockz = 56;
+// 	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
+// 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
+// 	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
+// 	gl.drawElements(gl.TRIANGLES, rock.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+// }
+
 
 function initRock1() {
 	for (let i = 0; i < 200; i ++) {
@@ -538,6 +571,8 @@ function checkDeath(roundedX, roundedZ) {
 		}
 	}
 }
+
+
 
 
 function drawScene() {
@@ -773,15 +808,15 @@ function drawScene() {
 
 
 		// draws the rock
-		gl.bindBuffer(gl.ARRAY_BUFFER, rock.vertexBuffer);
-		gl.vertexAttribPointer(program.vertexPositionAttribute, rock.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	    gl.bindBuffer(gl.ARRAY_BUFFER, rock.textureBuffer);
-	    gl.vertexAttribPointer(program.textureCoordAttribute, rock.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, rock[0].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	    gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].textureBuffer);
+	    gl.vertexAttribPointer(program.textureCoordAttribute, rock[0].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, rock.normalBuffer);
-		gl.vertexAttribPointer(program.vertexNormalAttribute, rock.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, rock[0].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 		 
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock.indexBuffer);		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock[0].indexBuffer);		
 
 		gl.uniform1i(program.textureUniform, 7);
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
@@ -789,14 +824,13 @@ function drawScene() {
 		// Aligning the Rock
 		var alignMatrix = utils.MakeScaleMatrix(1.5);
 		alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
-// qiZhou aooo
 		var rockx = 0;
 		var rocky = 0;
 		var rockz = 56;
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
-		gl.drawElements(gl.TRIANGLES, rock.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.TRIANGLES, rock[0].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
 
 
