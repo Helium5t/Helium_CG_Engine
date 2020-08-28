@@ -473,7 +473,7 @@ var preVz = 0;
 var rocks1 = [];
 var rocks2 = [];
 
-var deathRadius = 2.0;
+var deathRadius = 2;
 
 
 function initRock1() {
@@ -500,42 +500,66 @@ function distance(pointX, pointY, boatX, boatY) {
 	return Math.sqrt(Math.pow(pointX - boatX, 2) + Math.pow(pointY - boatY, 2));
 }
 
+function getHundreds(number) {
+	return parseInt(number/100);
+}
+
 function checkDeath(roundedX, roundedZ) {
 	console.log("ROUNDEDX: " + roundedX + "\nROUNDEDZ: " + roundedZ + "\nZ%200: " + (roundedZ%200));
 	var offsetedX = roundedX + 100;
+	var zPosition = roundedZ - getHundreds(roundedZ) * 100;
+	var directionsX = [-1, 0, 1, -1, 0, 1, -1, 0, -1];
+	var directionsZ = [-1, -1, -1, 0, 0, 0, 1, 1, 1];
 	
 	if (roundedZ % 200 >= 100) { //use rocks2
-		for (i = 0; i < 200; i++) {
-			for (j = 0; j < 200; j++) {
-				if (rocks2[i][j]) {
-					var d = distance((i-100), j, roundedX, roundedZ);
-					
-					if (Math.round(parseFloat(d)) <= parseFloat(deathRadius)) {
-						// collision
-						console.log("/ndistance: " + d);
-						console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
-						console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
-					}
+		for (i = 0; i < deathRadius; i++) {
+			for (j = 0; j < directionsX.length; j++) {
+				if (rocks2[offsetedX + directionsX[j] * deathRadius][zPosition + directionsZ[j] * deathRadius]) {
+
+					console.log("X: " + offsetedX + directionsX[j] * deathRadius + "\nZ: " + zPosition + directionsZ[j] * deathRadius + "\n")
+
+		 			//console.log("/ndistance: " + d);
+		 			//console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
+			 		//console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
+					return true;
 				}
-				
 			}
 		}
+
+		// for (i = 0; i < 200; i++) {
+		// 	for (j = 0; j < 200; j++) {
+		// 		if (rocks2[i][j]) {
+		// 			var d = distance((i-100), j, roundedX, roundedZ);
+					
+		// 			if (Math.round(parseFloat(d)) <= parseFloat(deathRadius)) {
+		// 				// collision
+		// 				console.log("/ndistance: " + d);
+		// 				console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
+		// 				console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
+		// 			}
+		// 		}
+				
+		// 	}
+		// }
 	} else { //use rocks1
-		for (i = 0; i < 200; i++) {
-			for (j = 0; j < 200; j++) {
-				if (rocks1[i][j]) {
-					var d = distance((i-100), j, roundedX, roundedZ);
+
+
+
+		// for (i = 0; i < 200; i++) {
+		// 	for (j = 0; j < 200; j++) {
+		// 		if (rocks1[i][j]) {
+		// 			var d = distance((i-100), j, roundedX, roundedZ);
 					
-					if (Math.round(parseFloat(d)) <= parseFloat(deathRadius)) {
-						// collision
-						console.log("/ndistance: " + d);
-						console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
-						console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
-					}
-				}
+		// 			if (Math.round(parseFloat(d)) <= parseFloat(deathRadius)) {
+		// 				// collision
+		// 				console.log("/ndistance: " + d);
+		// 				console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
+		// 				console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
+		// 			}
+		// 		}
 				
-			}
-		}
+		// 	}
+		// }
 	}
 }
 
@@ -667,7 +691,7 @@ function drawScene() {
 		carX -= delta[0];
 		carZ -= delta[2];
 
-		//console.log("X: " + carX + "\nZ: " + carZ + "\n")
+		console.log("X: " + carX + "\nZ: " + carZ + "\n")
 
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);	
 
@@ -677,7 +701,7 @@ function drawScene() {
 		// 	window.location.reload(false);
 		// }
 
-		//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
+		checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
 		// ANNOTATION: DE-COMMENT THE ABOVE LINE
 
 		// draws the skybox
