@@ -383,6 +383,16 @@ function main(){
 		skyboxTptx.onload = textureLoaderCallback;
 		skyboxTptx.src = topTextureData;
 		
+		skyboxTptx = new Image();
+		skyboxTptx.txNum = 8;
+		skyboxTptx.onload = textureLoaderCallback;
+		skyboxTptx.src = bottomTextureData;
+		
+		skyboxTptx = new Image();
+		skyboxTptx.txNum = 9;
+		skyboxTptx.onload = textureLoaderCallback;
+		skyboxTptx.src = backTextureData;
+		
 		rocktx = new Image();
 		rocktx.txNum = 7;
 		rocktx.onload = textureLoaderCallback;
@@ -462,6 +472,7 @@ var sAS = 0.1;	// Not used yet
 var mAS = 108.0;
 var ASur = 1.0;	// Not used yet
 var ASdr = 0.5;	// Not used yet
+var trackZscale = 10;
 var skyboxScale = 800
 var carLinAcc = 0.0;
 var carLinVel = 0.0;
@@ -542,6 +553,9 @@ function checkDeath(roundedX, roundedZ) {
 
 function drawScene() {
 		// compute time interval
+		//console.log('X: ' + carX);
+		//console.log('Z: ' + carZ);
+		//console.log('\n');
 		var currentTime = (new Date).getTime();
 		var deltaT;
 		if(lastUpdateTime){
@@ -692,7 +706,7 @@ function drawScene() {
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
 		 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skybox.indexBuffer);		
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.MakeScaleNuMatrix(10.0,10.0,1000.0));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.MakeScaleNuMatrix(10.0,10.0,trackZscale));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 1);
@@ -717,7 +731,24 @@ function drawScene() {
 		gl.uniform1i(program.textureUniform, 3);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
-		// draws the skybox left
+		// draws the skybox back
+		
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxFront.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	    gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.textureBuffer);
+	    gl.vertexAttribPointer(program.textureCoordAttribute, skyboxFront.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
+		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,30,-600+carZ),utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90) ),utils.MakeScaleMatrix(skyboxScale))));  		
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniform1i(program.textureUniform, 9);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+		// draws the skybox right of ship (left world)
 		
 		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxLeft.vertexBuffer);
 		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxLeft.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -729,13 +760,13 @@ function drawScene() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxLeft.indexBuffer);
 
 		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(-800,30,200+carZ),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(skyboxScale))));  		
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(-800,30,200+carZ),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(skyboxScale))));  		
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 4);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
-		// draws the skybox right
+		// draws the skybox left of ship (right world)
 				
 		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxRight.vertexBuffer);
 		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxRight.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -747,7 +778,7 @@ function drawScene() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxRight.indexBuffer);
 
 		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(800,30,200+carZ),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(skyboxScale))));  		
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(800,30,200+carZ),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(skyboxScale))));  		
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 5);
@@ -765,10 +796,29 @@ function drawScene() {
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxTop.indexBuffer);
 
 		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,170,0),utils.multiplyMatrices( utils.MakeRotateXMatrix(180) ,utils.MakeScaleMatrix(200.0))));  		
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,170,carZ),utils.multiplyMatrices( utils.MakeRotateXMatrix(180) ,utils.MakeScaleMatrix(skyboxScale))));  		
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 6);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+
+		// draws the skybox bottom
+			
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxTop.vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxTop.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxTop.textureBuffer);
+		gl.vertexAttribPointer(program.textureCoordAttribute, skyboxTop.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, skyboxTop.normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxTop.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxTop.indexBuffer);
+
+		//translate the image of y: -230, scaled up by 200
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,-770,200+carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180),  utils.MakeScaleMatrix(skyboxScale))));  		
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniform1i(program.textureUniform, 8);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 
@@ -789,7 +839,7 @@ function drawScene() {
 		// Aligning the Rock
 		var alignMatrix = utils.MakeScaleMatrix(1.5);
 		alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
-// qiZhou aooo
+
 		var rockx = 0;
 		var rocky = 0;
 		var rockz = 56;
