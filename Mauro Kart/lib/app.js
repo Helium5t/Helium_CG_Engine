@@ -343,6 +343,8 @@ function main(){
 		initRocks();
 		// rock[0] = new OBJ.Mesh(rockObjStr)
 		skybox = new OBJ.Mesh(trackNfieldObjStr);
+		skybox2 = new OBJ.Mesh(trackNfieldObjStr);
+		skybox3 = new OBJ.Mesh(trackNfieldObjStr);
 
 		// Loading other faces of the skybox
 		skyboxFront = new OBJ.Mesh(trackNfieldObjStr);
@@ -421,6 +423,8 @@ function main(){
 		//OBJ.initMeshBuffers(gl, rock[0])
 		OBJ.initMeshBuffers(gl, carMesh);
 		OBJ.initMeshBuffers(gl, skybox);
+		OBJ.initMeshBuffers(gl, skybox3);
+		OBJ.initMeshBuffers(gl, skybox2);
 		OBJ.initMeshBuffers(gl, skyboxFront);
 		OBJ.initMeshBuffers(gl, skyboxLeft);
 		OBJ.initMeshBuffers(gl, skyboxRight);
@@ -477,7 +481,8 @@ var sAS = 0.1;	// Not used yet
 var mAS = 108.0;
 var ASur = 1.0;	// Not used yet
 var ASdr = 0.5;	// Not used yet
-var trackZscale = 10;
+var trackZscale = 10.0;
+var trackZpos = [0,200,400];
 var skyboxScale = 800
 var carLinAcc = 0.0;
 var carLinVel = 0.0;
@@ -607,6 +612,71 @@ function checkDeath(roundedX, roundedZ) {
 }
 
 
+function generateTrack(){
+	// draws the skybox
+
+	if(carZ > trackZpos[0] + 150){
+		console.log('MOVING')
+		trackZpos = [trackZpos[1],trackZpos[2],trackZpos[2]+200]
+		console.log(trackZpos)
+	}
+
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.vertexBuffer);
+	gl.vertexAttribPointer(program.vertexPositionAttribute, skybox.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.textureBuffer);
+	gl.vertexAttribPointer(program.textureCoordAttribute, skybox.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.normalBuffer);
+	gl.vertexAttribPointer(program.vertexNormalAttribute, skybox.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skybox.indexBuffer);		
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[0]), utils.MakeScaleNuMatrix(10.0,10.0,trackZscale)));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 1);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
+
+
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.vertexBuffer);
+	gl.vertexAttribPointer(program.vertexPositionAttribute, skybox.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.textureBuffer);
+	gl.vertexAttribPointer(program.textureCoordAttribute, skybox.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.normalBuffer);
+	gl.vertexAttribPointer(program.vertexNormalAttribute, skybox.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skybox.indexBuffer);		
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[1]), utils.MakeScaleNuMatrix(10.0,10.0,trackZscale)));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 1);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
+
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.vertexBuffer);
+	gl.vertexAttribPointer(program.vertexPositionAttribute, skybox.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.textureBuffer);
+	gl.vertexAttribPointer(program.textureCoordAttribute, skybox.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, skybox.normalBuffer);
+	gl.vertexAttribPointer(program.vertexNormalAttribute, skybox.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+		
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skybox.indexBuffer);		
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[2]), utils.MakeScaleNuMatrix(10.0,10.0,trackZscale)));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 1);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
+
+}
 
 
 function drawScene() {
@@ -739,7 +809,7 @@ function drawScene() {
 		carX -= delta[0];
 		carZ -= delta[2];
 
-		//console.log("X: " + carX + "\nZ: " + carZ + "\n")
+		console.log("X: " + carX + "\nZ: " + carZ + "\n")
 
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);	
 
@@ -771,6 +841,7 @@ function drawScene() {
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
 		//gl.uniform1i(program.textureUniform, 1);
 		//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		generateTrack();
 
 		// draws the skybox front
 		
