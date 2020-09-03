@@ -312,9 +312,6 @@ function main(){
 	} catch(e){
 		console.log(e);
 	}
-
-
-	generateRockPositions(0, 200)
 	
 	if(gl){
 		// Compile and link shaders
@@ -452,9 +449,9 @@ function main(){
 		skyboxWM = utils.multiplyMatrices(utils.MakeRotateZMatrix(30), utils.MakeRotateYMatrix(135));
 		gLightDir = utils.multiplyMatrixVector(skyboxWM, gLightDir);
 
-		
-		initRock1();
-		initRock2();
+		initRock();
+		generateRockPositions(0, 200, rocks1);
+		generateRockPositions(0, 200, rocks2);
 
 		drawScene();
 	}else{
@@ -491,11 +488,12 @@ var preVz = 0;
 
 var rockPosition = [];
 var rockRotation = [];
-function generateRockPositions(lowerLimit, upperLimit){
+function generateRockPositions(lowerLimit, upperLimit, destMatrix){
 	for(i = 0; i<50;i++){
-		var positionX = Math.floor(Math.random() * 201) - 100;
+		var positionX = Math.floor(Math.random() * 200) - 100;
 		var positionZ = lowerLimit + Math.floor(Math.random() * upperLimit-lowerLimit);
-		rockPosition[i] = [positionX,positionZ];
+		rockPosition[i] = [positionX,positionZ + getHundreds(carZ) * 100];
+		destMatrix[positionX + 100][positionZ] = true;
 		rockRotation[i] = Math.floor(Math.random() * 360);
 	}
 }
@@ -548,22 +546,14 @@ var rocks2 = [];
 
 var deathRadius = 2;
 
-function initRock1() {
+function initRock() {
 	for (let i = 0; i < 200; i ++) {
 		rocks1[i] = [];
-		for (let j = 0; j < 100; j++) {
-			rocks1[i][j] = true;
-			//rocks2[i][j] = true;
-		}
-	}
-}
-
-function initRock2() {
-	for (let i = 0; i < 200; i ++) {
 		rocks2[i] = [];
-		for (let j = 0; j < 100; j++) {
-			//rocks1[i][j] = true;
-			rocks2[i][j] = true;
+		for (let j = 0; j < 200; j++) {
+			rocks1[i][j] = false;
+			rocks2[i][j] = false;
+			//rocks2[i][j] = true;
 		}
 	}
 }
@@ -702,6 +692,33 @@ function generateTrack(){
 
 }
 
+function floatComparison(num1, num2, cComparison) {
+	switch (cComparison) {
+		case ">":
+			return Math.round(parseFloat(num1)) > Math.round(parseFloat(num2));
+		
+		case "<":
+			return Math.round(parseFloat(num1)) < Math.round(parseFloat(num2));
+
+		case ">=":
+			return Math.round(parseFloat(num1)) >= Math.round(parseFloat(num2));
+
+		case "<=":
+			return Math.round(parseFloat(num1)) <= Math.round(parseFloat(num2));
+		
+		case "==":
+			return Math.round(parseFloat(num1)) == Math.round(parseFloat(num2));
+	
+		case "===":
+			return Math.round(parseFloat(num1)) === Math.round(parseFloat(num2));
+
+		default:
+			return false;
+	}
+}
+
+
+var done = false;
 
 function drawScene() {
 		// compute time interval
@@ -843,7 +860,25 @@ function drawScene() {
 		// 	window.location.reload(false);
 		// }
 
-		checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
+		
+		// un paio di cose da sistemare ancora
+		if (floatComparison(carZ%200, 0.0, "===") && !(done)) {
+			if (getHundreds(carZ) > 0) {
+				if (getHundreds(carZ) % 2 == 0) {
+					generateRockPositions(0, 200, rocks2);
+					done = true;
+				} else {
+					generateRockPositions(0, 200, rocks1);
+					done = true;
+				}
+			}
+		} else {
+			if (!(floatComparison(carZ%100, 0.0, "===")) && delta[2]>0) {
+				done = false;
+			}
+		}
+
+		//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
 		// ANNOTATION: DE-COMMENT THE ABOVE LINE
 
 		// draws the skybox
