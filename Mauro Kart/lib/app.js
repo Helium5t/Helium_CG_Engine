@@ -36,7 +36,8 @@ var carAngle = 0;
 var carX = -0.0;
 var carY = -0.7;
 var carZ = -67;
-
+var correctionFactor =3;
+var correctionTime = 0;
 
 var lookRadius = 10.0;
 
@@ -49,7 +50,6 @@ var rvy = 0.0;
 
 var keyFunctionDown = function(e) {
 	
-	console.log(gLightDir)
 	// console.log('X:' + carX);
 	// console.log('Y:' + carY);
 	// console.log('Z:' + carZ);
@@ -81,8 +81,9 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-var keyFunctionUp = async function(e) {
+var keyFunctionUp = async function(e){
 	//console.log("FIRED");
+	
 	var currentTime = (new Date).getTime();
 	var deltaT;
 	if(lastUpdateTime){
@@ -93,25 +94,34 @@ var keyFunctionUp = async function(e) {
 	lastUpdateTime = currentTime;
 
   	if(keys[e.keyCode]) {
+		console.log(carAngle)
   		keys[e.keyCode] = false;
 		switch(e.keyCode) {
 	  		case 37:
-//console.log("KeyDown  - Dir LEFT");
+		//console.log("KeyDown  - Dir LEFT");
 		rvy = rvy - 1.0;
 		//ruota la barca di carAngle gradi indietro
 		//carAngle;
-		var numberOfDelta = carAngle*5;
+		var numberOfDelta ;
+		if(carAngle < 0){
+			numberOfDelta = carAngle*-correctionFactor;
+		}
+		else{
+			numberOfDelta = carAngle*correctionFactor;
+		}
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) > parseFloat(0.0) && !(rvy); i++){
+		for(var i = 0; i<numberOfDelta  && !(rvy); i++){
 			
 			carAngle = (carAngle-deltaAngle);
 			//console.log(carAngle);
 
-			await sleep(2000/numberOfDelta);
+			await sleep(correctionTime/numberOfDelta);
 		}
-
-		//carAngle = 0.0;
+		if(Math.round(parseFloat(carAngle)) == parseFloat(0.0) && !rvy){
+			carAngle = carAngle - carAngle;
+		}
+		
 
 		//console.log("FINAL ANGLE (left): " + carAngle);
 		
@@ -130,18 +140,27 @@ var keyFunctionUp = async function(e) {
 		//vz = vz+1;
 		break;
 	  case 39:
-//console.log("KeyDown - Dir RIGHT");
+		//console.log("KeyDown - Dir RIGHT");
 		rvy = rvy + 1.0;
 
-		var numberOfDelta = 0.0-carAngle*5; // TOP QUALITY MATH HERE
+		var numberOfDelta ;
+		if(carAngle < 0){
+			numberOfDelta = carAngle*-correctionFactor;
+		}
+		else{
+			numberOfDelta = carAngle*correctionFactor;
+		}
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) < parseFloat(0.0) && !(rvy);i++){
+		for(var i = 0; i<numberOfDelta  && !(rvy);i++){
 
 			carAngle = (carAngle-deltaAngle);
 			//console.log(carAngle);
 
-			await sleep(2000/numberOfDelta);
+			await sleep(correctionTime/numberOfDelta);
+		}
+		if(Math.round(parseFloat(carAngle))  == parseFloat(0.0) && !rvy){
+			carAngle = carAngle - carAngle;
 		}
 
 		//carAngle = 0.0;

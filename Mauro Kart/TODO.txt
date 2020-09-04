@@ -1,5 +1,6 @@
 [X] Logica di Gioco : Morte, Spawn, Collisione, Start, nuovo rettangolo
 [X] Skybox : fronte, destra, sinistra
+[X] Correzione movimento barca
 [ ] Correzione Texture (track)
 [ ] Aggiornare HTMl
 [X] Nave sul bordo (Fixare limiti mappa)
