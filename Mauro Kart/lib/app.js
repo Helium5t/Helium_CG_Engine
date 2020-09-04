@@ -23,7 +23,7 @@ var projectionMatrix,
 	viewMatrix,
 	worldMatrix,
 	gLightDir,
-	skyboxWM;
+	orientLight;
 
 
 //Parameters for Camera
@@ -38,7 +38,8 @@ var carAngle = 0;
 var carX = -0.0;
 var carY = -0.7;
 var carZ = -67;
-
+var correctionFactor =3;
+var correctionTime = 0;
 
 var lookRadius = 10.0;
 
@@ -51,7 +52,6 @@ var rvy = 0.0;
 
 var keyFunctionDown = function(e) {
 	
-	console.log(gLightDir)
 	// console.log('X:' + carX);
 	// console.log('Y:' + carY);
 	// console.log('Z:' + carZ);
@@ -83,8 +83,9 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-var keyFunctionUp = async function(e) {
+var keyFunctionUp = async function(e){
 	//console.log("FIRED");
+	
 	var currentTime = (new Date).getTime();
 	var deltaT;
 	if(lastUpdateTime){
@@ -95,25 +96,34 @@ var keyFunctionUp = async function(e) {
 	lastUpdateTime = currentTime;
 
   	if(keys[e.keyCode]) {
+		console.log(carAngle)
   		keys[e.keyCode] = false;
 		switch(e.keyCode) {
 	  		case 37:
-//console.log("KeyDown  - Dir LEFT");
+		//console.log("KeyDown  - Dir LEFT");
 		rvy = rvy - 1.0;
 		//ruota la barca di carAngle gradi indietro
 		//carAngle;
-		var numberOfDelta = carAngle*5;
+		var numberOfDelta ;
+		if(carAngle < 0){
+			numberOfDelta = carAngle*-correctionFactor;
+		}
+		else{
+			numberOfDelta = carAngle*correctionFactor;
+		}
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) > parseFloat(0.0) && !(rvy); i++){
+		for(var i = 0; i<numberOfDelta  && !(rvy); i++){
 			
 			carAngle = (carAngle-deltaAngle);
 			//console.log(carAngle);
 
-			await sleep(2000/numberOfDelta);
+			await sleep(correctionTime/numberOfDelta);
 		}
-
-		//carAngle = 0.0;
+		if(Math.round(parseFloat(carAngle)) == parseFloat(0.0) && !rvy){
+			carAngle = carAngle - carAngle;
+		}
+		
 
 		//console.log("FINAL ANGLE (left): " + carAngle);
 		
@@ -132,18 +142,27 @@ var keyFunctionUp = async function(e) {
 		//vz = vz+1;
 		break;
 	  case 39:
-//console.log("KeyDown - Dir RIGHT");
+		//console.log("KeyDown - Dir RIGHT");
 		rvy = rvy + 1.0;
 
-		var numberOfDelta = 0.0-carAngle*5; // TOP QUALITY MATH HERE
+		var numberOfDelta ;
+		if(carAngle < 0){
+			numberOfDelta = carAngle*-correctionFactor;
+		}
+		else{
+			numberOfDelta = carAngle*correctionFactor;
+		}
 		var deltaAngle = carAngle/numberOfDelta;
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta && Math.round(parseFloat(carAngle)) < parseFloat(0.0) && !(rvy);i++){
+		for(var i = 0; i<numberOfDelta  && !(rvy);i++){
 
 			carAngle = (carAngle-deltaAngle);
 			//console.log(carAngle);
 
-			await sleep(2000/numberOfDelta);
+			await sleep(correctionTime/numberOfDelta);
+		}
+		if(Math.round(parseFloat(carAngle))  == parseFloat(0.0) && !rvy){
+			carAngle = carAngle - carAngle;
 		}
 
 		//carAngle = 0.0;
@@ -456,10 +475,10 @@ function main(){
 	
 	
 		// algin the skybox with the light
-		gLightDir = [-1.0, 0.0, 0.0, 0.0];
+		gLightDir = [1.0, 0.0, 0.0, 0.0];
 
-		skyboxWM = utils.multiplyMatrices(utils.MakeRotateZMatrix(0), utils.MakeRotateYMatrix(0));
-		gLightDir = utils.multiplyMatrixVector(skyboxWM, gLightDir);
+		orientLight = utils.multiplyMatrices(utils.MakeRotateZMatrix(-45), utils.MakeRotateYMatrix(180));
+		gLightDir = utils.multiplyMatrixVector(orientLight, gLightDir);
 
 		initRock();
 		generateRockPositions(0, 200, rocks1);
@@ -490,7 +509,8 @@ var sAS = 0.1;	// Not used yet
 var mAS = 108.0;
 var ASur = 1.0;	// Not used yet
 var ASdr = 0.5;	// Not used yet
-var trackZscale = 10.0;
+var trackZmulti = 10.0;
+var trackScale = 100.0;
 var trackZpos = [0,200,400];
 var skyboxScale = 800
 var carLinAcc = 0.0;
@@ -561,8 +581,10 @@ function generateRock(rockPositionsArray,rockRotationsArray, numElements, rocksA
 		var rockz = rockPositionsArray[i][1];
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),alignMatrix));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
+
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotationsArray[i])));
 		gl.drawElements(gl.TRIANGLES, rocksArray[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
 	}
 	
 }
@@ -743,11 +765,11 @@ function generateTrack(){
 
 	for(var i = 0; i<3;i++){
 	prepare_object_rendering(skybox,1.0);
-	WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(10.0,10.0,trackZscale)));
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale)));
 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 	gl.uniform1i(program.textureUniform, 1);
-	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	}
 }
 
@@ -942,13 +964,7 @@ function drawScene() {
 		//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
 		// ANNOTATION: DE-COMMENT THE ABOVE LINE
 
-		// draws the skybox
-		prepare_object_rendering(skybox,1.0)	
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.MakeScaleNuMatrix(10.0,10.0,trackZscale));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 1);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
+		// draws the track
 		//gl.uniform1i(program.textureUniform, 1);
 		//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 		generateTrack();
