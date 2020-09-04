@@ -918,18 +918,15 @@ function drawScene() {
 
 	// car motion
 	delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
-
-	if (carX < -100 && delta[0] > 0) {
-		delta[0] = 0
+	if (carX - delta[0] < -100 && delta[0] > 0) {
+		delta[0] = 100.0 + CarX;
 	}
-	if (carX > 100 && delta[0] < 0) {
-		delta[0] = 0
+	if (carX  - delta[0] > 100 && delta[0] < 0) {
+		delta[0] = carX - 100.0;
 	}
-
+	
 	carX -= delta[0];
 	carZ -= delta[2];
-
-	//		console.log("X: " + carX + "\nZ: " + carZ + "\n")
 
 	projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
 
