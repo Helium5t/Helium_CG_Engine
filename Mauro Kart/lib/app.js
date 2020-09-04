@@ -17,7 +17,7 @@ var gl = null,
 	skyboxRgtx = null;
 	skyboxBktx = null;
 	skyboxBttx = null;
-	rocktx = new Array(numRocks).fill(null);
+	rocktx = null;
 var projectionMatrix, 
 	perspectiveMatrix,
 	viewMatrix,
@@ -413,10 +413,10 @@ function main(){
 		skyboxTptx.onload = textureLoaderCallback;
 		skyboxTptx.src = topTextureData;
 		
-		rocktx[0] = new Image();
-		rocktx[0].txNum = 7;
-		rocktx[0].onload = textureLoaderCallback;
-		rocktx[0].src = RockTextureData;
+		rocktx = new Image();
+		rocktx.txNum = 7;
+		rocktx.onload = textureLoaderCallback;
+		rocktx.src = RockTextureData;
 		skyboxBttx = new Image();
 		skyboxBttx.txNum = 8;
 		skyboxBttx.onload = textureLoaderCallback;
