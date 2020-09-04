@@ -19,7 +19,7 @@ var projectionMatrix,
 	viewMatrix,
 	worldMatrix,
 	gLightDir,
-	skyboxWM;
+	orientLight;
 
 
 //Parameters for Camera
@@ -452,10 +452,10 @@ function main(){
 	
 	
 		// algin the skybox with the light
-		gLightDir = [-1.0, 0.0, 0.0, 0.0];
+		gLightDir = [1.0, 0.0, 0.0, 0.0];
 
-		skyboxWM = utils.multiplyMatrices(utils.MakeRotateZMatrix(0), utils.MakeRotateYMatrix(0));
-		gLightDir = utils.multiplyMatrixVector(skyboxWM, gLightDir);
+		orientLight = utils.multiplyMatrices(utils.MakeRotateZMatrix(-45), utils.MakeRotateYMatrix(180));
+		gLightDir = utils.multiplyMatrixVector(orientLight, gLightDir);
 
 		initRock();
 		generateRockPositions(0, 200, rocks1);
@@ -535,7 +535,7 @@ function generateRock(){
 		var rockz = rockPosition[i][1];
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),alignMatrix));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotation[i])));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(alignMatrix));
 		gl.drawElements(gl.TRIANGLES, rock[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 	}
 	
