@@ -488,7 +488,8 @@ var sAS = 0.1;	// Not used yet
 var mAS = 108.0;
 var ASur = 1.0;	// Not used yet
 var ASdr = 0.5;	// Not used yet
-var trackZscale = 10.0;
+var trackZmulti = 10.0;
+var trackScale = 100.0;
 var trackZpos = [0,200,400];
 var skyboxScale = 800
 var carLinAcc = 0.0;
@@ -659,11 +660,11 @@ function generateTrack(){
 
 	for(var i = 0; i<3;i++){
 	prepare_object_rendering(skybox,1.0);
-	WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(10.0,10.0,trackZscale)));
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale)));
 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 	gl.uniform1i(program.textureUniform, 1);
-	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	}
 }
 
@@ -858,13 +859,7 @@ function drawScene() {
 		//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
 		// ANNOTATION: DE-COMMENT THE ABOVE LINE
 
-		// draws the skybox
-		prepare_object_rendering(skybox,1.0)	
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.MakeScaleNuMatrix(10.0,10.0,trackZscale));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 1);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 12);
+		// draws the track
 		//gl.uniform1i(program.textureUniform, 1);
 		//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 		generateTrack();
