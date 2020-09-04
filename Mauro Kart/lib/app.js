@@ -38,7 +38,7 @@ var carAngle = 0;
 var carX = -0.0;
 var carY = -0.7;
 var carZ = -67;
-var correctionFactor =3;
+var correctionFactor =5;
 var correctionTime = 0;
 
 var lookRadius = 10.0;
@@ -58,20 +58,20 @@ var keyFunctionDown = function(e) {
   	keys[e.keyCode] = true;
 	switch(e.keyCode) {
 	  case 37:
-//console.log("KeyUp   - Dir LEFT");
+
 		rvy = rvy + 1.0;
 		//vz = vz-1;
 		break;
 	  case 39:
-//console.log("KeyUp   - Dir RIGHT");
+
 		rvy = rvy - 1.0;
 		break;
 	  case 38:
-//console.log("KeyUp   - Dir UP");
+
 		vz = vz - 0.4;
 		break;
 	  case 40:
-//console.log("KeyUp   - Dir DOWN");
+
 		vz = vz + 1.0;
 		break;
 	}
@@ -83,7 +83,7 @@ function sleep(ms) {
   }
 
 var keyFunctionUp = async function (e) {
-	//console.log("FIRED");
+	
 	var currentTime = (new Date).getTime();
 	var deltaT;
 	if (lastUpdateTime) {
@@ -98,7 +98,7 @@ var keyFunctionUp = async function (e) {
 		keys[e.keyCode] = false;
 		switch (e.keyCode) {
 			case 37:
-				//console.log("KeyDown  - Dir LEFT");
+				
 				rvy = rvy - 1.0;
 				//ruota la barca di carAngle gradi indietro
 				//carAngle;
@@ -114,7 +114,7 @@ var keyFunctionUp = async function (e) {
 				for (var i = 0; i < numberOfDelta && !(rvy); i++) {
 
 					carAngle = (carAngle - deltaAngle);
-					//console.log(carAngle);
+					
 
 					await sleep(correctionTime / numberOfDelta);
 				}
@@ -140,7 +140,7 @@ var keyFunctionUp = async function (e) {
 				//vz = vz+1;
 				break;
 			case 39:
-				//console.log("KeyDown - Dir RIGHT");
+				
 				rvy = rvy + 1.0;
 
 				var numberOfDelta;
@@ -169,11 +169,11 @@ var keyFunctionUp = async function (e) {
 
 				break;
 			case 38:
-				//console.log("KeyDown - Dir UP");
+				
 				vz = vz + 0.4;
 				break;
 			case 40:
-				//console.log("KeyDown - Dir DOWN");
+				
 				vz = vz - 1.0;
 				break;
 		}
@@ -805,7 +805,7 @@ function drawScene() {
 	// compute time interval
 	console.log('X: ' + carX);
 	console.log('Z: ' + carZ);
-	//console.log('\n');
+	
 	var currentTime = (new Date).getTime();
 	var deltaT;
 	if (lastUpdateTime) {
@@ -841,7 +841,7 @@ function drawScene() {
 	if (vz > 0.1) {
 		if (preVz > 0.1) {
 			carLinAcc = carLinAcc + ATur * deltaT;
-			//console.log(ATur);
+			
 			if (carLinAcc > mAT) carLinAcc = mAT;
 		} else if (carLinAcc < sAT) carLinAcc = sAT;
 	} else if (vz > -0.1) {
