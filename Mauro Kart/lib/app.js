@@ -1,10 +1,12 @@
 
 const numRocks = 50;
+
 var canvas;
 var gl = null,
 	program = null,
 	carMesh = null,
-	rock = new Array(numRocks).fill(null),
+	rock1 = new Array(numRocks).fill(null),
+	rock2 = new Array(numRocks).fill(null),
 	skybox = null,
 	imgtx = null,
 	skyboxLattx = null,
@@ -80,103 +82,102 @@ function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-var keyFunctionUp = async function(e){
+var keyFunctionUp = async function (e) {
 	//console.log("FIRED");
-	console.log('speed:' + carLinVel)
 	var currentTime = (new Date).getTime();
 	var deltaT;
-	if(lastUpdateTime){
+	if (lastUpdateTime) {
 		deltaT = (currentTime - lastUpdateTime) / 1000.0;
 	} else {
-		deltaT = 1/50;
+		deltaT = 1 / 50;
 	}
 	lastUpdateTime = currentTime;
 
-  	if(keys[e.keyCode]) {
-		console.log(carAngle)
-  		keys[e.keyCode] = false;
-		switch(e.keyCode) {
-	  		case 37:
-		//console.log("KeyDown  - Dir LEFT");
-		rvy = rvy - 1.0;
-		//ruota la barca di carAngle gradi indietro
-		//carAngle;
-		var numberOfDelta ;
-		if(carAngle < 0){
-			numberOfDelta = carAngle*-correctionFactor;
-		}
-		else{
-			numberOfDelta = carAngle*correctionFactor;
-		}
-		var deltaAngle = carAngle/numberOfDelta;
+	if (keys[e.keyCode]) {
 		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta  && !(rvy); i++){
-			
-			carAngle = (carAngle-deltaAngle);
-			//console.log(carAngle);
+		keys[e.keyCode] = false;
+		switch (e.keyCode) {
+			case 37:
+				//console.log("KeyDown  - Dir LEFT");
+				rvy = rvy - 1.0;
+				//ruota la barca di carAngle gradi indietro
+				//carAngle;
+				var numberOfDelta;
+				if (carAngle < 0) {
+					numberOfDelta = carAngle * -correctionFactor;
+				}
+				else {
+					numberOfDelta = carAngle * correctionFactor;
+				}
+				var deltaAngle = carAngle / numberOfDelta;
+				//console.log(carAngle)
+				for (var i = 0; i < numberOfDelta && !(rvy); i++) {
 
-			await sleep(correctionTime/numberOfDelta);
+					carAngle = (carAngle - deltaAngle);
+					//console.log(carAngle);
+
+					await sleep(correctionTime / numberOfDelta);
+				}
+				if (Math.round(parseFloat(carAngle)) == parseFloat(0.0) && !rvy) {
+					carAngle = carAngle - carAngle;
+				}
+
+
+				//console.log("FINAL ANGLE (left): " + carAngle);
+
+
+				// carAngle = carAngle-deltaAngle;
+				// await sleep(2000);
+
+				// carAngle = carAngle-deltaAngle;
+				// await sleep(2000);
+
+				// carAngle = carAngle-deltaAngle;
+
+				//rvy = rvy .0;
+
+
+				//vz = vz+1;
+				break;
+			case 39:
+				//console.log("KeyDown - Dir RIGHT");
+				rvy = rvy + 1.0;
+
+				var numberOfDelta;
+				if (carAngle < 0) {
+					numberOfDelta = carAngle * -correctionFactor;
+				}
+				else {
+					numberOfDelta = carAngle * correctionFactor;
+				}
+				var deltaAngle = carAngle / numberOfDelta;
+				//console.log(carAngle)
+				for (var i = 0; i < numberOfDelta && !(rvy); i++) {
+
+					carAngle = (carAngle - deltaAngle);
+					//console.log(carAngle);
+
+					await sleep(correctionTime / numberOfDelta);
+				}
+				if (Math.round(parseFloat(carAngle)) == parseFloat(0.0) && !rvy) {
+					carAngle = carAngle - carAngle;
+				}
+
+				//carAngle = 0.0;
+
+				//console.log("FINAL ANGLE (right): " + carAngle);
+
+				break;
+			case 38:
+				//console.log("KeyDown - Dir UP");
+				vz = vz + 0.4;
+				break;
+			case 40:
+				//console.log("KeyDown - Dir DOWN");
+				vz = vz - 1.0;
+				break;
 		}
-		if(Math.round(parseFloat(carAngle)) == parseFloat(0.0) && !rvy){
-			carAngle = carAngle - carAngle;
-		}
-		
-
-		//console.log("FINAL ANGLE (left): " + carAngle);
-		
-
-		// carAngle = carAngle-deltaAngle;
-		// await sleep(2000);
-
-		// carAngle = carAngle-deltaAngle;
-		// await sleep(2000);
-
-		// carAngle = carAngle-deltaAngle;
-		
-		//rvy = rvy .0;
-
-
-		//vz = vz+1;
-		break;
-	  case 39:
-		//console.log("KeyDown - Dir RIGHT");
-		rvy = rvy + 1.0;
-
-		var numberOfDelta ;
-		if(carAngle < 0){
-			numberOfDelta = carAngle*-correctionFactor;
-		}
-		else{
-			numberOfDelta = carAngle*correctionFactor;
-		}
-		var deltaAngle = carAngle/numberOfDelta;
-		//console.log(carAngle)
-		for(var i = 0; i<numberOfDelta  && !(rvy);i++){
-
-			carAngle = (carAngle-deltaAngle);
-			//console.log(carAngle);
-
-			await sleep(correctionTime/numberOfDelta);
-		}
-		if(Math.round(parseFloat(carAngle))  == parseFloat(0.0) && !rvy){
-			carAngle = carAngle - carAngle;
-		}
-
-		//carAngle = 0.0;
-
-		//console.log("FINAL ANGLE (right): " + carAngle);
-
-		break;
-	  case 38:
-//console.log("KeyDown - Dir UP");
-		vz = vz + 0.4;
-		break;
-	  case 40:
-//console.log("KeyDown - Dir DOWN");
-		vz = vz - 1.0;
-		break;
 	}
-  }
 }
 
 var aspectRatio;
@@ -478,8 +479,8 @@ function main(){
 		gLightDir = utils.multiplyMatrixVector(orientLight, gLightDir);
 
 		initRock();
-		generateRockPositions(0, 200, rocks1);
-		generateRockPositions(0, 200, rocks2);
+		// generateRockPositions(0, 200, rocks1);
+		// generateRockPositions(0, 200, rocks2);
 
 		drawScene();
 	}else{
@@ -515,10 +516,11 @@ var carLinVel = 0.0;
 var carAngVel = 0.0;
 var preVz = 0;
 
+//DEPRECATED
 var rockPosition = [];
 var rockRotation = [];
 
-
+//DEPRECATED
 function generateRockPositions(lowerLimit, upperLimit, destMatrix, numElements){
 	for(i = 0; i<numElements;i++){
 		var positionX = Math.floor(Math.random() * 200) - 100;
@@ -528,7 +530,27 @@ function generateRockPositions(lowerLimit, upperLimit, destMatrix, numElements){
 		rockRotation[i] = Math.floor(Math.random() * 360);
 	}
 }
-function generateRock(rockPositionsArray,rockRotationsArray, numElements){
+
+function generateRockPositionOnMatrix(lowerLimit, upperLimit, numElements,destMatrix){
+	let rockPos = [];
+	for(i = 0; i<numElements;i++){
+		var positionX = Math.floor(Math.random() * 200) - 100;
+		var positionZ = lowerLimit + Math.floor(Math.random() * (upperLimit - lowerLimit));
+		destMatrix[positionX + 100][positionZ-lowerLimit] = true;
+		rockPos[i] = [positionX, positionZ];
+	}
+	return rockPos;
+}
+
+function generateRockRotationOnMatrix(numElements){
+	let rockRot = [];
+	for(i = 0; i<numElements;i++){
+		rockRot[i] = Math.floor(Math.random() * 360);
+	}
+	return rockRot;
+}
+
+function generateRock(rockPositionsArray,rockRotationsArray, numElements, rocksArray){
 	// var angleX = Math.floor(Math.random() * 360);
 	// var angleY = Math.floor(Math.random() * 360);
 	// var angleZ = Math.floor(Math.random() * 360);
@@ -537,15 +559,15 @@ function generateRock(rockPositionsArray,rockRotationsArray, numElements){
 
 	for(i=0; i<numElements; i++){
 		// draws the rock
-		gl.bindBuffer(gl.ARRAY_BUFFER, rock[i].vertexBuffer);
-		gl.vertexAttribPointer(program.vertexPositionAttribute, rock[i].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		gl.bindBuffer(gl.ARRAY_BUFFER, rock[i].textureBuffer);
-		gl.vertexAttribPointer(program.textureCoordAttribute, rock[i].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, rocksArray[i].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].textureBuffer);
+		gl.vertexAttribPointer(program.textureCoordAttribute, rocksArray[i].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, rock[i].normalBuffer);
-		gl.vertexAttribPointer(program.vertexNormalAttribute, rock[i].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, rocksArray[i].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 			
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock[i].indexBuffer);		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rocksArray[i].indexBuffer);		
 
 		gl.uniform1i(program.textureUniform, 7);
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
@@ -558,33 +580,98 @@ function generateRock(rockPositionsArray,rockRotationsArray, numElements){
 		var rockz = rockPositionsArray[i][1];
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),alignMatrix));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(alignMatrix));
-		gl.drawElements(gl.TRIANGLES, rock[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotationsArray[i])));
+		gl.drawElements(gl.TRIANGLES, rocksArray[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
 	}
 	
 }
 
+// Get meshes for rocks
 function initRocks(){
 	for(i=0; i<numRocks;i++){
-		rock[i] = new OBJ.Mesh(rockObjStr)
-		OBJ.initMeshBuffers(gl, rock[i])
+		rock1[i] = new OBJ.Mesh(rockObjStr)
+		OBJ.initMeshBuffers(gl, rock1[i])
+		rock2[i] = new OBJ.Mesh(rockObjStr)
+		OBJ.initMeshBuffers(gl, rock2[i])
 	}
 }
+
+// 5
+// 4
+
+// 3
+
+// 2		600	p1 r1
+// 		400
+
+
+// 1		400   p2 r2
+// 		200
+
+// 0      	200    
+// 		0
+
+var position1 = [];
+var rotation1 = [];
+var position2 = [];
+var rotation2 = [];
+var isStarting = true;
 //var aRock;
 
-var rocks1 = [];
-var rocks2 = [];
+var rocksCol1 = [];
+var rocksCol2 = [];
+
+//deve essere chiamato nel blocco 0 e basta 
+//una volta passato il blocco 0 chiamare solo la funzion rockBuffer
+function startingRockBuffer(){
+	if(isStarting){
+		isStarting = false;
+		position2 = generateRockPositionOnMatrix((1)*200, (1)*200+200, numRocks,rocksCol2);
+		rotation2 = generateRockRotationOnMatrix(numRocks);
+	
+		position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks,rocksCol1);
+		rotation1 = generateRockRotationOnMatrix(numRocks);
+	}
+
+	//da chiamare sempre e comunque anche senza modifiche
+	generateRock(position1,rotation1, numRocks, rock1)
+	generateRock(position2,rotation2, numRocks, rock2)
+
+}
+
+//da chiamare sempre dopo il blocco zero, parametri : 
+//isEven true se la sezione in cui sono e' pari
+//isSectionChanged true se ho cambiato la sezione  tipo da 0->1
+//sectionNum numero della sezione in cui sono
+function rockBuffer(isEven, isSectionChanged, sectionNum){
+	if(isSectionChanged){
+		if(isEven){
+			//sono in una sezione pari e genero una sezione dispari
+			position2 = generateRockPositionOnMatrix((sectionNum+1)*200, (sectionNum+1)*200+200, numRocks,rocksCol2);
+			rotation2 = generateRockRotationOnMatrix(numRocks);
+		}else{
+			//sono in una sezione dispari e genero una sezione pari
+			position1 = generateRockPositionOnMatrix((sectionNum+1)*200, (sectionNum+1)*200+200, numRocks,rocksCol1);
+			rotation1 = generateRockRotationOnMatrix(numRocks);
+		}
+	}
+	generateRock(position1, rotation1, numRocks, rock1)
+	generateRock(position2, rotation2, numRocks, rock2)
+
+}
 
 var deathRadius = 2;
 
+// Initialize square matrices for rocks
 function initRock() {
 	for (let i = 0; i < 200; i ++) {
-		rocks1[i] = [];
-		rocks2[i] = [];
+		rocksCol1[i] = [];
+		rocksCol2[i] = [];
 		for (let j = 0; j < 200; j++) {
-			rocks1[i][j] = false;
-			rocks2[i][j] = false;
-			//rocks2[i][j] = true;
+			rocksCol1[i][j] = false;
+			rocksCol2[i][j] = false;
 		}
 	}
 }
@@ -659,13 +746,13 @@ function checkDeath(roundedX, roundedZ) {
 
 function prepare_object_rendering(object,light_mul){
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.vertexBuffer);
-		gl.vertexAttribPointer(program.vertexPositionAttribute, object.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	    gl.bindBuffer(gl.ARRAY_BUFFER, object.textureBuffer);
-	    gl.vertexAttribPointer(program.textureCoordAttribute, object.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		gl.bindBuffer(gl.ARRAY_BUFFER, object.normalBuffer);
-		gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
+	gl.vertexAttribPointer(program.vertexPositionAttribute, object.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.textureBuffer);
+    gl.vertexAttribPointer(program.textureCoordAttribute, object.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.normalBuffer);
+	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 }
 
 
@@ -677,12 +764,12 @@ function generateTrack(){
 	}
 
 	for(var i = 0; i<3;i++){
-	prepare_object_rendering(skybox,1.0);
-	WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale)));
-	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-	gl.uniform1i(program.textureUniform, 1);
-	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		prepare_object_rendering(skybox,1.0);
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale)));
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniform1i(program.textureUniform, 1);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	}
 }
 
@@ -715,282 +802,286 @@ function floatComparison(num1, num2, cComparison) {
 var done = false;
 
 function drawScene() {
-		// compute time interval
-		//console.log('X: ' + carX);
-		//console.log('Z: ' + carZ);
-		//console.log('\n');
-		var currentTime = (new Date).getTime();
-		var deltaT;
-		if(lastUpdateTime){
-			deltaT = (currentTime - lastUpdateTime) / 1000.0;
-		} else {
-			deltaT = 1/50;
-		}
-		lastUpdateTime = currentTime;
+	// compute time interval
+	console.log('X: ' + carX);
+	console.log('Z: ' + carZ);
+	//console.log('\n');
+	var currentTime = (new Date).getTime();
+	var deltaT;
+	if (lastUpdateTime) {
+		deltaT = (currentTime - lastUpdateTime) / 1000.0;
+	} else {
+		deltaT = 1 / 50;
+	}
+	lastUpdateTime = currentTime;
 
-		// call user procedure for world-view-projection matrices
-		wvpMats = worldViewProjection(carX, carY, carZ, carAngle, cx, cy, cz);
-		// the generated matrices (one world and 2 is projection) depend on the boat's position and direction, 
-		// the world is a rotation by CarDir degrees and translation over to the boat's coordinates
+	// call user procedure for world-view-projection matrices
+	wvpMats = worldViewProjection(carX, carY, carZ, carAngle, cx, cy, cz);
+	// the generated matrices (one world and 2 is projection) depend on the boat's position and direction, 
+	// the world is a rotation by CarDir degrees and translation over to the boat's coordinates
 
-		// //re align boat
-		// if(keys[37] == false){
-		// 	carAngle = carAngle*((lastUpdateTime+3000)-currentTime)
-		// }
+	// //re align boat
+	// if(keys[37] == false){
+	// 	carAngle = carAngle*((lastUpdateTime+3000)-currentTime)
+	// }
 
-		viewMatrix = wvpMats[1];
+	viewMatrix = wvpMats[1];
 
-		perspectiveMatrix = projection = utils.MakePerspective(60, aspectRatio, 0.1, 2000.0);
+	perspectiveMatrix = projection = utils.MakePerspective(60, aspectRatio, 0.1, 2000.0);
 
-		// dvecmat is actually the world matrix at the moment
-		dvecmat = wvpMats[0];
-		
-		// computing car velocities
-		carAngVel = mAS * deltaT * rvy;	
-		//console.log(carAngVel)
-		
-		vz = -vz;
-		// = 0.8 * deltaT * 60 * vz;
-		if(vz > 0.1) {
-		  if(preVz > 0.1) {
+	// dvecmat is actually the world matrix at the moment
+	dvecmat = wvpMats[0];
+
+	// computing car velocities
+	carAngVel = mAS * deltaT * rvy;
+	//console.log(carAngVel)
+
+	vz = -vz;
+	// = 0.8 * deltaT * 60 * vz;
+	if (vz > 0.1) {
+		if (preVz > 0.1) {
 			carLinAcc = carLinAcc + ATur * deltaT;
 			//console.log(ATur);
-			if(carLinAcc > mAT) carLinAcc = mAT;
-		  } else if(carLinAcc < sAT) carLinAcc = sAT;
-		} else if(vz > -0.1) {
-			carLinAcc = carLinAcc - ATdr * deltaT * Math.sign(carLinAcc);
-			if(Math.abs(carLinAcc) < 0.001) carLinAcc = 0.0;
-		} else { 
-		  if(preVz < 0.1) {
+			if (carLinAcc > mAT) carLinAcc = mAT;
+		} else if (carLinAcc < sAT) carLinAcc = sAT;
+	} else if (vz > -0.1) {
+		carLinAcc = carLinAcc - ATdr * deltaT * Math.sign(carLinAcc);
+		if (Math.abs(carLinAcc) < 0.001) carLinAcc = 0.0;
+	} else {
+		if (preVz < 0.1) {
 			carLinAcc = carLinAcc - BTur * deltaT;
 			if(carLinAcc < -mBT) carLinAcc = -mBT;
-		  } else if(carLinAcc > -sBT) carLinAcc = -sBT;
-		}
-		preVz = vz;
-		vz = -vz;
-		carLinVel = carLinVel * Math.exp(Tfric * deltaT) - deltaT * carLinAcc;
+		} else if(carLinAcc > -sBT) carLinAcc = -sBT;
+	  }
+	  preVz = vz;
+	  vz = -vz;
+	  carLinVel = carLinVel * Math.exp(Tfric * deltaT) - deltaT * carLinAcc;
 
-		if(Math.abs(carLinVel)<0.01 && !vz){
-			carLinVel = 0.0;
-		}
-		//console.log(carLinVel)
-		
-		// Magic for moving the car
-		worldMatrix = utils.multiplyMatrices(dvecmat, utils.MakeScaleMatrix(1.0));
-		xaxis = [dvecmat[0],dvecmat[4],dvecmat[8]]; //axises transformed by the world matrix (boat position)
-		yaxis = [dvecmat[1],dvecmat[5],dvecmat[9]];
-		zaxis = [dvecmat[2],dvecmat[6],dvecmat[10]];
-		
-		if(rvy != 0) {	
-			qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(carAngVel));
-			newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);  // New world matrix after the boat rotation has been computed according to angular speed
-			R11=newDvecmat[10];R12=newDvecmat[8];R13=newDvecmat[9];
-			R21=newDvecmat[2]; R22=newDvecmat[0];R23=newDvecmat[1];
-			R31=newDvecmat[6]; R32=newDvecmat[4];R33=newDvecmat[5];
-			
-			if((R31<1)&&(R31>-1)) {
-				theta = -Math.asin(R31);
-				phi = Math.atan2(R32/Math.cos(theta), R33/Math.cos(theta));
-				psi = Math.atan2(R21/Math.cos(theta), R11/Math.cos(theta));
-				
-			} else {
-				phi = 0;
-				if(R31<=-1) {
-					theta = Math.PI / 2;
-					psi = phi + Math.atan2(R12, R13);
-				} else {
-					theta = -Math.PI / 2;
-					psi = Math.atan2(-R12, -R13) - phi;
-				}
-			}
-//			elevation = theta/Math.PI*180;
-//			roll      = phi/Math.PI*180;
-//			angle     = psi/Math.PI*180;
-			carAngle  = psi/Math.PI*180;
-			if (Math.round(parseFloat(carAngle)) > parseFloat(90.0)) {
-				carAngle = 90.0;
-			}
-			if (Math.round(parseFloat(carAngle)) < parseFloat(0.0-90.0)) {
-				carAngle = 0.0-90.0;
-			}
-			//console.log(carAngle);
-		}
-		// spring-camera system
-			// target coordinates
-		nC = utils.multiplyMatrixVector(worldMatrix, [0, 5, -10, 1]);
-			// distance from target
-			
-		deltaCam = [cx - nC[0], cy - nC[1], cz - nC[2]];
-		
-		camAcc = [-fSk * deltaCam[0] - fDk * camVel[0], -fSk * deltaCam[1] - fDk * camVel[1], -fSk * deltaCam[2] - fDk * camVel[2]];
-		
-		camVel = [camVel[0] + camAcc[0] * deltaT, camVel[1] + camAcc[1] * deltaT, camVel[2] + camAcc[2] * deltaT];
-		cx += camVel[0] * deltaT;
-		cy += camVel[1] * deltaT;
-		cz += camVel[2] * deltaT;
-		
-		// car motion
-		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
-		
-		if(carX<-100 && delta[0]>0){
-			delta[0] = 0
-		}
-		if(carX>100 && delta[0]<0){
-			delta[0] = 0
-		}
+	  if(Math.abs(carLinVel)<0.01 && !vz){
+		  carLinVel = 0.0;
+	  }
+	  //console.log(carLinVel)
+	  
+	// Magic for moving the car
+	worldMatrix = utils.multiplyMatrices(dvecmat, utils.MakeScaleMatrix(1.0));
+	xaxis = [dvecmat[0], dvecmat[4], dvecmat[8]]; //axises transformed by the world matrix (boat position)
+	yaxis = [dvecmat[1], dvecmat[5], dvecmat[9]];
+	zaxis = [dvecmat[2], dvecmat[6], dvecmat[10]];
 
-		carX -= delta[0];
-		carZ -= delta[2];
+	if (rvy != 0) {
+		qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(carAngVel));
+		newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);  // New world matrix after the boat rotation has been computed according to angular speed
+		R11 = newDvecmat[10]; R12 = newDvecmat[8]; R13 = newDvecmat[9];
+		R21 = newDvecmat[2]; R22 = newDvecmat[0]; R23 = newDvecmat[1];
+		R31 = newDvecmat[6]; R32 = newDvecmat[4]; R33 = newDvecmat[5];
 
-//		console.log("X: " + carX + "\nZ: " + carZ + "\n")
+		if ((R31 < 1) && (R31 > -1)) {
+			theta = -Math.asin(R31);
+			phi = Math.atan2(R32 / Math.cos(theta), R33 / Math.cos(theta));
+			psi = Math.atan2(R21 / Math.cos(theta), R11 / Math.cos(theta));
 
-		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);	
-
-		// if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
-		// 	console.log("X: " + badX + "\nZ: "  + "\n");
-		// 	console.log("LOST THE BOAT\n");
-		// 	window.location.reload(false);
-		// }
-
-		
-		// un paio di cose da sistemare ancora
-		if (floatComparison(carZ%200, 0.0, "===") && !(done)) {
-			if (getHundreds(carZ) > 0) {
-				if (getHundreds(carZ) % 2 == 0) {
-					generateRockPositions(0, 200, rocks2);
-					done = true;
-				} else {
-					generateRockPositions(0, 200, rocks1);
-					done = true;
-				}
-			}
 		} else {
-			if (!(floatComparison(carZ%100, 0.0, "===")) && delta[2]>0) {
-				done = false;
+			phi = 0;
+			if (R31 <= -1) {
+				theta = Math.PI / 2;
+				psi = phi + Math.atan2(R12, R13);
+			} else {
+				theta = -Math.PI / 2;
+				psi = Math.atan2(-R12, -R13) - phi;
 			}
 		}
+		//			elevation = theta/Math.PI*180;
+		//			roll      = phi/Math.PI*180;
+		//			angle     = psi/Math.PI*180;
+		carAngle = psi / Math.PI * 180;
+		if (Math.round(parseFloat(carAngle)) > parseFloat(90.0)) {
+			carAngle = 90.0;
+		}
+		if (Math.round(parseFloat(carAngle)) < parseFloat(0.0 - 90.0)) {
+			carAngle = 0.0 - 90.0;
+		}
+		//console.log(carAngle);
+	}
+	// spring-camera system
+	// target coordinates
+	nC = utils.multiplyMatrixVector(worldMatrix, [0, 5, -10, 1]);
+	// distance from target
 
-		//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
-		// ANNOTATION: DE-COMMENT THE ABOVE LINE
+	deltaCam = [cx - nC[0], cy - nC[1], cz - nC[2]];
 
-		// draws the track
-		//gl.uniform1i(program.textureUniform, 1);
-		//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-		generateTrack();
+	camAcc = [-fSk * deltaCam[0] - fDk * camVel[0], -fSk * deltaCam[1] - fDk * camVel[1], -fSk * deltaCam[2] - fDk * camVel[2]];
 
-		// draws the skybox front
-		
-		//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.vertexBuffer);
-		//gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxFront.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	    //gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.textureBuffer);
-	    //gl.vertexAttribPointer(program.textureCoordAttribute, skyboxFront.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.normalBuffer);
-		//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
-		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
-		prepare_object_rendering(skyboxFront,1.0);
-		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,30,1000+carZ),utils.multiplyMatrices( utils.MakeRotateXMatrix(-90) ,utils.MakeScaleMatrix(skyboxScale))));  		
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 3);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	camVel = [camVel[0] + camAcc[0] * deltaT, camVel[1] + camAcc[1] * deltaT, camVel[2] + camAcc[2] * deltaT];
+	cx += camVel[0] * deltaT;
+	cy += camVel[1] * deltaT;
+	cz += camVel[2] * deltaT;
 
-		// draws the skybox back
-		
-		prepare_object_rendering(skyboxBack,1.0);
-		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,30,-600+carZ),utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90) ),utils.MakeScaleMatrix(skyboxScale))));  		
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 9);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	// car motion
+	delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
 
-		// draws the skybox right of ship (left world)
-		
-		prepare_object_rendering(skyboxLeft,1.0);
-		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(-800,30,200+carZ),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(skyboxScale))));  		
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 4);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	if (carX < -100 && delta[0] > 0) {
+		delta[0] = 0
+	}
+	if (carX > 100 && delta[0] < 0) {
+		delta[0] = 0
+	}
 
-		// draws the skybox left of ship (right world)
-				
-		prepare_object_rendering(skyboxRight,1.0);
-		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(800,30,200+carZ),utils.multiplyMatrices( utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)) ,utils.MakeScaleMatrix(skyboxScale))));  		
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 5);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	carX -= delta[0];
+	carZ -= delta[2];
 
-		// draws the skybox top
-		prepare_object_rendering(skyboxTop,1.0);
-		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,170,carZ),utils.multiplyMatrices( utils.MakeRotateXMatrix(180) ,utils.MakeScaleMatrix(skyboxScale))));  		
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 6);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	//		console.log("X: " + carX + "\nZ: " + carZ + "\n")
+
+	projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
+
+	// if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
+	// 	console.log("X: " + badX + "\nZ: "  + "\n");
+	// 	console.log("LOST THE BOAT\n");
+	// 	window.location.reload(false);
+	// }
+
+	startingRockBuffer();
+
+	if (floatComparison(carZ % 200, 0.0, "===") && !(done)) {
+		if (getHundreds(carZ) > 0) {
+			// sono in una posizione multipla di 200
+			let isEven = ((getHundreds(carZ) / 2) % 2 == 0);
+			let isSectionChanged = true;
+			let sectionNum = Math.floor(getHundreds(carZ) / 2);
+			rockBuffer(isEven, isSectionChanged, sectionNum);
+
+			done = true;
+		}
+	} else {
+		// non sono in una posizione multipla di 200
+		rockBuffer(null, false, null);
+		// se non (sono in una posizione multipla di 200 e sto ananzando)
+		// delta e' negativa se avanzo, positiva se indietreggio
+		if (!(floatComparison(carZ % 200, 0.0, "===")) && delta[2] < 0) {
+			done = false;
+		}
+	}
+
+	//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
+	// ANNOTATION: DE-COMMENT THE ABOVE LINE
+
+	// draws the track
+	//gl.uniform1i(program.textureUniform, 1);
+	//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	generateTrack();
+
+	// draws the skybox front
+
+	//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.vertexBuffer);
+	//gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxFront.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.textureBuffer);
+	//gl.vertexAttribPointer(program.textureCoordAttribute, skyboxFront.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.normalBuffer);
+	//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+	//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
+	prepare_object_rendering(skyboxFront, 1.0);
+	//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 3);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// draws the skybox back
+
+	prepare_object_rendering(skyboxBack, 1.0);
+	//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 9);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// draws the skybox right of ship (left world)
+
+	prepare_object_rendering(skyboxLeft, 1.0);
+	//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 4);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// draws the skybox left of ship (right world)
+
+	prepare_object_rendering(skyboxRight, 1.0);
+	//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 5);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// draws the skybox top
+	prepare_object_rendering(skyboxTop, 1.0);
+	//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 6);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 
-		// draws the skybox bottom
-			
-		
-		prepare_object_rendering(skyboxBottom,1.0)
-		//translate the image of y: -230, scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,-770,200+carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180),  utils.MakeScaleMatrix(skyboxScale))));  		
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 8);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	// draws the skybox bottom
 
 
-		// // draws the rock
-		// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].vertexBuffer);
-		// gl.vertexAttribPointer(program.vertexPositionAttribute, rock[0].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	    // gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].textureBuffer);
-	    // gl.vertexAttribPointer(program.textureCoordAttribute, rock[0].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		
-		// gl.bindBuffer(gl.ARRAY_BUFFER, rock.normalBuffer);
-		// gl.vertexAttribPointer(program.vertexNormalAttribute, rock[0].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		 
-		// gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock[0].indexBuffer);		
-
-		// gl.uniform1i(program.textureUniform, 7);
-		// gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
-
-		// // Aligning the Rock
-		// var alignMatrix = utils.MakeScaleMatrix(1.5);
-		// alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
-
-		// var rockx = 0;
-		// var rocky = 0;
-		// var rockz = 56;
-		// WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
-		// gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		// gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
-		// gl.drawElements(gl.TRIANGLES, rock[0].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	prepare_object_rendering(skyboxBottom, 1.0)
+	//translate the image of y: -230, scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 8);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 
-		generateRock();
+	// // draws the rock
+	// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].vertexBuffer);
+	// gl.vertexAttribPointer(program.vertexPositionAttribute, rock[0].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].textureBuffer);
+	// gl.vertexAttribPointer(program.textureCoordAttribute, rock[0].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	// gl.bindBuffer(gl.ARRAY_BUFFER, rock.normalBuffer);
+	// gl.vertexAttribPointer(program.vertexNormalAttribute, rock[0].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	// gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock[0].indexBuffer);		
+
+	// gl.uniform1i(program.textureUniform, 7);
+	// gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
+
+	// // Aligning the Rock
+	// var alignMatrix = utils.MakeScaleMatrix(1.5);
+	// alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
+
+	// var rockx = 0;
+	// var rocky = 0;
+	// var rockz = 56;
+	// WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
+	// gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
+	// gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
+	// gl.drawElements(gl.TRIANGLES, rock[0].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
 
-		// draws the Ship
-		prepare_object_rendering(carMesh,0.2);
+	//generateRock();
 
 
-		// Aligning the Ship
-		var alignMatrix = utils.MakeScaleMatrix(0.01);
-		alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
+	// draws the Ship
+	prepare_object_rendering(carMesh, 0.2);
 
-		WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix),alignMatrix);
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
-		gl.uniform1i(program.textureUniform, 0);
-		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-		window.requestAnimationFrame(drawScene);		
+
+	// Aligning the Ship
+	var alignMatrix = utils.MakeScaleMatrix(0.01);
+	alignMatrix = utils.multiplyMatrices(alignMatrix, utils.MakeRotateYMatrix(90));
+
+	WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix), alignMatrix);
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
+	gl.uniform1i(program.textureUniform, 0);
+	gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	window.requestAnimationFrame(drawScene);		
 }
 
