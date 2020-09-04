@@ -1,8 +1,10 @@
+
+const numRocks = 50;
 var canvas;
 var gl = null,
 	program = null,
 	carMesh = null,
-	rock = new Array(50).fill(null),
+	rock = new Array(numRocks).fill(null),
 	skybox = null,
 	imgtx = null,
 	skyboxLattx = null,
@@ -13,7 +15,7 @@ var gl = null,
 	skyboxRgtx = null;
 	skyboxBktx = null;
 	skyboxBttx = null;
-	rocktx = new Array(50).fill(null);
+	rocktx = new Array(numRocks).fill(null);
 var projectionMatrix, 
 	perspectiveMatrix,
 	viewMatrix,
@@ -496,8 +498,10 @@ var preVz = 0;
 
 var rockPosition = [];
 var rockRotation = [];
-function generateRockPositions(lowerLimit, upperLimit, destMatrix){
-	for(i = 0; i<50;i++){
+
+
+function generateRockPositions(lowerLimit, upperLimit, destMatrix, numElements){
+	for(i = 0; i<numElements;i++){
 		var positionX = Math.floor(Math.random() * 200) - 100;
 		var positionZ = lowerLimit + Math.floor(Math.random() * upperLimit-lowerLimit);
 		rockPosition[i] = [positionX,positionZ + getHundreds(carZ) * 100];
@@ -505,14 +509,14 @@ function generateRockPositions(lowerLimit, upperLimit, destMatrix){
 		rockRotation[i] = Math.floor(Math.random() * 360);
 	}
 }
-function generateRock(){
+function generateRock(rockPositionsArray,rockRotationsArray, numElements){
 	// var angleX = Math.floor(Math.random() * 360);
 	// var angleY = Math.floor(Math.random() * 360);
 	// var angleZ = Math.floor(Math.random() * 360);
 
 	//var rotatedMatrixRock = utils.multiplyMatrices(utils.MakeRotateZMatrix(angleZ),utils.multiplyMatrices(utils.MakeRotateYMatrix(angleY),utils.multiplyMatrices(utils.MakeRotateXMatrix(angleX),utils.identityMatrix)));
 
-	for(i=0; i<50; i++){
+	for(i=0; i<numElements; i++){
 		// draws the rock
 		gl.bindBuffer(gl.ARRAY_BUFFER, rock[i].vertexBuffer);
 		gl.vertexAttribPointer(program.vertexPositionAttribute, rock[i].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -529,20 +533,20 @@ function generateRock(){
 
 
 		var alignMatrix = utils.MakeScaleMatrix(1.5);
-		alignMatrix = utils.multiplyMatrices(utils.MakeRotateYMatrix(rockRotation[i]),alignMatrix);
-		var rockx = rockPosition[i][0];
+		alignMatrix = utils.multiplyMatrices(utils.MakeRotateYMatrix(rockRotationsArray[i]),alignMatrix);
+		var rockx = rockPositionsArray[i][0];
 		var rocky = 0;
-		var rockz = rockPosition[i][1];
+		var rockz = rockPositionsArray[i][1];
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),alignMatrix));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotation[i])));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotationsArray[i])));
 		gl.drawElements(gl.TRIANGLES, rock[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 	}
 	
 }
 
 function initRocks(){
-	for(i=0; i<50;i++){
+	for(i=0; i<numRocks;i++){
 		rock[i] = new OBJ.Mesh(rockObjStr)
 		OBJ.initMeshBuffers(gl, rock[i])
 	}
@@ -565,6 +569,7 @@ function initRock() {
 		}
 	}
 }
+
 
 function distance(pointX, pointY, boatX, boatY) {
 	return Math.sqrt(Math.pow(pointX - boatX, 2) + Math.pow(pointY - boatY, 2));
