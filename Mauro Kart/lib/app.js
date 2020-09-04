@@ -49,7 +49,6 @@ var vz = 0.0;
 var rvy = 0.0;
 
 var keyFunctionDown = function(e) {
-	
 	// console.log('X:' + carX);
 	// console.log('Y:' + carY);
 	// console.log('Z:' + carZ);
@@ -83,7 +82,7 @@ function sleep(ms) {
 
 var keyFunctionUp = async function(e){
 	//console.log("FIRED");
-	
+	console.log('speed:' + carLinVel)
 	var currentTime = (new Date).getTime();
 	var deltaT;
 	if(lastUpdateTime){
@@ -502,7 +501,7 @@ var sBT = 1.0;
 var mBT = 3.0;
 var BTur = 5.0;
 var BTdr = 5.5;
-var Tfric = Math.log(0.05);
+var Tfric = Math.log(0.0001);
 var sAS = 0.1;	// Not used yet
 var mAS = 108.0;
 var ASur = 1.0;	// Not used yet
@@ -770,13 +769,9 @@ function drawScene() {
 		preVz = vz;
 		vz = -vz;
 		carLinVel = carLinVel * Math.exp(Tfric * deltaT) - deltaT * carLinAcc;
-		
-		
-		if(carLinVel>0.3 ){
-			carLinVel = 0.3;
-		}
-		if (carLinVel < (0.0-0.3)) {
-			carLinVel = 0.0-0.3; // TOP QUALITY MATH HERE
+
+		if(Math.abs(carLinVel)<0.01 && !vz){
+			carLinVel = 0.0;
 		}
 		//console.log(carLinVel)
 		
