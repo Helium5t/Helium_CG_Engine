@@ -46,6 +46,8 @@ var vz = 0.0;
 var rvy = 0.0;
 
 var keyFunctionDown = function(e) {
+	
+	console.log(gLightDir)
 	// console.log('X:' + carX);
 	// console.log('Y:' + carY);
 	// console.log('Z:' + carZ);
@@ -452,7 +454,7 @@ function main(){
 		// algin the skybox with the light
 		gLightDir = [-1.0, 0.0, 0.0, 0.0];
 
-		skyboxWM = utils.multiplyMatrices(utils.MakeRotateZMatrix(30), utils.MakeRotateYMatrix(135));
+		skyboxWM = utils.multiplyMatrices(utils.MakeRotateZMatrix(0), utils.MakeRotateYMatrix(0));
 		gLightDir = utils.multiplyMatrixVector(skyboxWM, gLightDir);
 
 		initRock();
@@ -527,13 +529,13 @@ function generateRock(){
 
 
 		var alignMatrix = utils.MakeScaleMatrix(1.5);
-		alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(rockRotation[i]));
+		alignMatrix = utils.multiplyMatrices(utils.MakeRotateYMatrix(rockRotation[i]),alignMatrix);
 		var rockx = rockPosition[i][0];
 		var rocky = 0;
 		var rockz = rockPosition[i][1];
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),alignMatrix));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotation[i])));
 		gl.drawElements(gl.TRIANGLES, rock[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 	}
 	
@@ -573,7 +575,7 @@ function getHundreds(number) {
 }
 
 function checkDeath(roundedX, roundedZ) {
-	console.log("ROUNDEDX: " + roundedX + "\nROUNDEDZ: " + roundedZ + "\nZ%200: " + (roundedZ%200));
+	//console.log("ROUNDEDX: " + roundedX + "\nROUNDEDZ: " + roundedZ + "\nZ%200: " + (roundedZ%200));
 	var offsetedX = roundedX + 100;
 	var zPosition = roundedZ - getHundreds(roundedZ) * 100;
 	var directionsX = [-1, 0, 1, -1, 0, 1, -1, 0, -1];
@@ -584,7 +586,7 @@ function checkDeath(roundedX, roundedZ) {
 			for (j = 0; j < directionsX.length; j++) {
 				if (rocks2[offsetedX + directionsX[j] * deathRadius][zPosition + directionsZ[j] * deathRadius]) {
 
-					console.log("X: " + offsetedX + directionsX[j] * deathRadius + "\nZ: " + zPosition + directionsZ[j] * deathRadius + "\n")
+					//console.log("X: " + offsetedX + directionsX[j] * deathRadius + "\nZ: " + zPosition + directionsZ[j] * deathRadius + "\n")
 
 		 			//console.log("/ndistance: " + d);
 		 			//console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
@@ -647,9 +649,7 @@ function generateTrack(){
 	// draws the skybox
 
 	if(carZ > trackZpos[0] + 150){
-		console.log('MOVING')
 		trackZpos = [trackZpos[1],trackZpos[2],trackZpos[2]+200]
-		console.log(trackZpos)
 	}
 
 	for(var i = 0; i<3;i++){
@@ -706,7 +706,8 @@ function drawScene() {
 
 		// call user procedure for world-view-projection matrices
 		wvpMats = worldViewProjection(carX, carY, carZ, carAngle, cx, cy, cz);
-
+		// the generated matrices (one world and 2 is projection) depend on the boat's position and direction, 
+		// the world is a rotation by CarDir degrees and translation over to the boat's coordinates
 
 		// //re align boat
 		// if(keys[37] == false){
@@ -717,6 +718,7 @@ function drawScene() {
 
 		perspectiveMatrix = projection = utils.MakePerspective(60, aspectRatio, 0.1, 2000.0);
 
+		// dvecmat is actually the world matrix at the moment
 		dvecmat = wvpMats[0];
 		
 		// computing car velocities
@@ -755,13 +757,13 @@ function drawScene() {
 		
 		// Magic for moving the car
 		worldMatrix = utils.multiplyMatrices(dvecmat, utils.MakeScaleMatrix(1.0));
-		xaxis = [dvecmat[0],dvecmat[4],dvecmat[8]];
+		xaxis = [dvecmat[0],dvecmat[4],dvecmat[8]]; //axises transformed by the world matrix (boat position)
 		yaxis = [dvecmat[1],dvecmat[5],dvecmat[9]];
 		zaxis = [dvecmat[2],dvecmat[6],dvecmat[10]];
 		
 		if(rvy != 0) {	
 			qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(carAngVel));
-			newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);
+			newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);  // New world matrix after the boat rotation has been computed according to angular speed
 			R11=newDvecmat[10];R12=newDvecmat[8];R13=newDvecmat[9];
 			R21=newDvecmat[2]; R22=newDvecmat[0];R23=newDvecmat[1];
 			R31=newDvecmat[6]; R32=newDvecmat[4];R33=newDvecmat[5];
@@ -820,7 +822,7 @@ function drawScene() {
 		carX -= delta[0];
 		carZ -= delta[2];
 
-		console.log("X: " + carX + "\nZ: " + carZ + "\n")
+//		console.log("X: " + carX + "\nZ: " + carZ + "\n")
 
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);	
 
@@ -975,7 +977,6 @@ function drawScene() {
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
 		gl.uniform1i(program.textureUniform, 0);
 		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-		
 		window.requestAnimationFrame(drawScene);		
 }
 
