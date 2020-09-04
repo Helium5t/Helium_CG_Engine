@@ -1,10 +1,12 @@
 
 const numRocks = 50;
+
 var canvas;
 var gl = null,
 	program = null,
 	carMesh = null,
-	rock = new Array(numRocks).fill(null),
+	rock1 = new Array(numRocks).fill(null),
+	rock2 = new Array(numRocks).fill(null),
 	skybox = null,
 	imgtx = null,
 	skyboxLattx = null,
@@ -509,7 +511,27 @@ function generateRockPositions(lowerLimit, upperLimit, destMatrix, numElements){
 		rockRotation[i] = Math.floor(Math.random() * 360);
 	}
 }
-function generateRock(rockPositionsArray,rockRotationsArray, numElements){
+
+function generateRockPositionOnMatrix(lowerLimit, upperLimit, numElements,destMatrix){
+	let rockPos = [];
+	for(i = 0; i<numElements;i++){
+		var positionX = Math.floor(Math.random() * 200) - 100;
+		var positionZ = lowerLimit + Math.floor(Math.random() * upperLimit-lowerLimit);
+		destMatrix[positionX + 100][positionZ-lowerLimit] = true;
+		rockPos[i] = [positionX,positionZ + getHundreds(carZ) * 100];
+	}
+	return rockPos;
+}
+
+function generateRockRotationOnMatrix(numElements){
+	let rockRot = [];
+	for(i = 0; i<numElements;i++){
+		rockRot[i] = Math.floor(Math.random() * 360);
+	}
+	return rockRot;
+}
+
+function generateRock(rockPositionsArray,rockRotationsArray, numElements, rocksArray){
 	// var angleX = Math.floor(Math.random() * 360);
 	// var angleY = Math.floor(Math.random() * 360);
 	// var angleZ = Math.floor(Math.random() * 360);
@@ -518,15 +540,15 @@ function generateRock(rockPositionsArray,rockRotationsArray, numElements){
 
 	for(i=0; i<numElements; i++){
 		// draws the rock
-		gl.bindBuffer(gl.ARRAY_BUFFER, rock[i].vertexBuffer);
-		gl.vertexAttribPointer(program.vertexPositionAttribute, rock[i].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		gl.bindBuffer(gl.ARRAY_BUFFER, rock[i].textureBuffer);
-		gl.vertexAttribPointer(program.textureCoordAttribute, rock[i].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].vertexBuffer);
+		gl.vertexAttribPointer(program.vertexPositionAttribute, rocksArray[i].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].textureBuffer);
+		gl.vertexAttribPointer(program.textureCoordAttribute, rocksArray[i].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-		gl.bindBuffer(gl.ARRAY_BUFFER, rock[i].normalBuffer);
-		gl.vertexAttribPointer(program.vertexNormalAttribute, rock[i].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].normalBuffer);
+		gl.vertexAttribPointer(program.vertexNormalAttribute, rocksArray[i].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 			
-		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock[i].indexBuffer);		
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rocksArray[i].indexBuffer);		
 
 		gl.uniform1i(program.textureUniform, 7);
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
@@ -540,21 +562,83 @@ function generateRock(rockPositionsArray,rockRotationsArray, numElements){
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),alignMatrix));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotationsArray[i])));
-		gl.drawElements(gl.TRIANGLES, rock[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.TRIANGLES, rocksArray[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 	}
 	
 }
 
 function initRocks(){
 	for(i=0; i<numRocks;i++){
-		rock[i] = new OBJ.Mesh(rockObjStr)
-		OBJ.initMeshBuffers(gl, rock[i])
+		rock1[i] = new OBJ.Mesh(rockObjStr)
+		OBJ.initMeshBuffers(gl, rock1[i])
+		rock2[i] = new OBJ.Mesh(rockObjStr)
+		OBJ.initMeshBuffers(gl, rock2[i])
 	}
 }
+
+// 5
+// 4
+
+// 3
+
+// 2		600	p1 r1
+// 		400
+
+
+// 1		400   p2 r2
+// 		200
+
+// 0      	200    
+// 		0
+
+var position1 = [];
+var rotation1 = [];
+var position2 = [];
+var rotation2 = [];
+var isStarting = true;
 //var aRock;
 
-var rocks1 = [];
-var rocks2 = [];
+var rocksCol1 = [];
+var rocksCol2 = [];
+
+//deve essere chiamato nel blocco 0 e basta una volta passato il blocco 0 chiamare solo la funzion rockBuffer
+function startingRockBuffer(){
+	if(isStarting){
+		isStarting = false;
+		position2 = generateRockPositionOnMatrix((1)*200, (1)*200+200, numRocks,rocksCol2);
+		rotation2 = generateRockRotationOnMatrix(numRocks);
+	
+		position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks,rocksCol1);
+		rotation1 = generateRockRotationOnMatrix(numRocks);
+	}
+
+	//da chiamare sempre e comunque anche senza modifiche
+	generateRock(position1,rotation1, numElements, rock1)
+	generateRock(position2,rotation2, numElements, rock2)
+
+}
+//da chiamare sempre dopo il blocco zero, parametri : 
+//isEven true se la sezione in cui sono e' pari
+//isSectionChanged true se ho cambiato la sezione  tipo da 0->1
+//sectionNum numero della sezione in cui sono
+function rockBuffer(isEven,isSectionChanged, sectionNum){
+	if(isSectionChanged){
+		if(isEven){
+			//sono in una sezione pari e genero una sezione dispari
+			position2 = generateRockPositionOnMatrix((sectionNum+1)*200, (sectionNum+1)*200+200, numRocks,rocksCol2);
+			rotation2 = generateRockRotationOnMatrix(numRocks);
+		}else{
+			//sono in una sezione dispari e genero una sezione pari
+			position1 = generateRockPositionOnMatrix((sectionNum+1)*200, (sectionNum+1)*200+200, numRocks,rocksCol1);
+			rotation1 = generateRockRotationOnMatrix(numRocks);
+		}
+	}
+	generateRock(position1,rotation1, numElements, rock1)
+	generateRock(position2,rotation2, numElements, rock2)
+
+}
+
+
 
 var deathRadius = 2;
 
