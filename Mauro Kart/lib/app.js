@@ -40,7 +40,7 @@ var carY = -0.7;
 var carZ = -67;
 var correctionFactor =5;
 var correctionTime = 0;
-
+var newSector = false;
 var lookRadius = 10.0;
 
 
@@ -626,15 +626,12 @@ var rocksCol2 = [];
 //deve essere chiamato nel blocco 0 e basta 
 //una volta passato il blocco 0 chiamare solo la funzion rockBuffer
 function startingRockBuffer(){
-	if(isStarting){
-		isStarting = false;
-		position2 = generateRockPositionOnMatrix((1)*200, (1)*200+200, numRocks,rocksCol2);
-		rotation2 = generateRockRotationOnMatrix(numRocks);
-	
-		position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks,rocksCol1);
-		rotation1 = generateRockRotationOnMatrix(numRocks);
-	}
+	isStarting = false;
+	position2 = generateRockPositionOnMatrix((1)*200, (1)*200+200, numRocks,rocksCol2);
+	rotation2 = generateRockRotationOnMatrix(numRocks);
 
+	position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks,rocksCol1);
+	rotation1 = generateRockRotationOnMatrix(numRocks);
 	//da chiamare sempre e comunque anche senza modifiche
 	generateRock(position1,rotation1, numRocks, rock1)
 	generateRock(position2,rotation2, numRocks, rock2)
@@ -682,7 +679,7 @@ function distance(pointX, pointY, boatX, boatY) {
 }
 
 function getHundreds(number) {
-	return parseInt(number/100);
+	return Math.trunc(number/100);
 }
 
 function checkDeath(roundedX, roundedZ) {
@@ -799,12 +796,10 @@ function floatComparison(num1, num2, cComparison) {
 }
 
 
-var done = false;
-
 function drawScene() {
 	// compute time interval
-	console.log('X: ' + carX);
-	console.log('Z: ' + carZ);
+	//console.log('X: ' + carX);
+	//console.log('Z: ' + carZ);
 	
 	var currentTime = (new Date).getTime();
 	var deltaT;
@@ -926,6 +921,13 @@ function drawScene() {
 	}
 	
 	carX -= delta[0];
+	if( getHundreds(carZ) %2 != 0 && getHundreds(carZ - delta[2]) %2 == 0 && delta[2] < 0 ){
+		newSector = true;
+		console.log(carZ);
+		console.log('uptick');
+		console.log(carZ-delta[2])
+	}
+
 	carZ -= delta[2];
 
 	projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
@@ -935,10 +937,13 @@ function drawScene() {
 	// 	console.log("LOST THE BOAT\n");
 	// 	window.location.reload(false);
 	// }
+	if(isStarting){
+		isStarting = false;
+		startingRockBuffer();
+	}
 
-	startingRockBuffer();
-
-	if (floatComparison(carZ % 200, 0.0, "===") && !(done)) {
+	if (newSector) {
+		newSector = false;
 		if (getHundreds(carZ) > 0) {
 			// sono in una posizione multipla di 200
 			let isEven = ((getHundreds(carZ) / 2) % 2 == 0);
@@ -946,16 +951,12 @@ function drawScene() {
 			let sectionNum = Math.floor(getHundreds(carZ) / 2);
 			rockBuffer(isEven, isSectionChanged, sectionNum);
 
-			done = true;
 		}
 	} else {
 		// non sono in una posizione multipla di 200
 		rockBuffer(null, false, null);
 		// se non (sono in una posizione multipla di 200 e sto ananzando)
 		// delta e' negativa se avanzo, positiva se indietreggio
-		if (!(floatComparison(carZ % 200, 0.0, "===")) && delta[2] < 0) {
-			done = false;
-		}
 	}
 
 	//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
