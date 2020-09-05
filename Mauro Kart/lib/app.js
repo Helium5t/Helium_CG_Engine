@@ -24,6 +24,7 @@ var projectionMatrix,
 	worldMatrix,
 	gLightDir,
 	orientLight;
+	ambFactor = 1;
 
 
 //Parameters for Camera
@@ -266,7 +267,7 @@ out vec4 color;
 void main() {
 	vec4 texcol = texture(u_texture, fs_uv);
 	float ambFact = lightDir.w;
-	float dimFact = (1.0-ambFact) * clamp(dot(normalize(fs_norm), lightDir.xyz),0.0,1.0) + ambFact;
+	float dimFact = clamp(ambFact,0.0,1.0)* clamp(dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
 	color = vec4(texcol.rgb * dimFact, texcol.a);
 }`;
 
@@ -570,7 +571,7 @@ function generateRock(rockPositionsArray,rockRotationsArray, numElements, rocksA
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rocksArray[i].indexBuffer);		
 
 		gl.uniform1i(program.textureUniform, 7);
-		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], ambFactor);
 
 
 		var alignMatrix = utils.MakeScaleMatrix(1.5);
@@ -761,7 +762,7 @@ function generateTrack(){
 	}
 
 	for(var i = 0; i<3;i++){
-		prepare_object_rendering(skybox,1.0);
+		prepare_object_rendering(skybox,ambFactor);
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale)));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
@@ -977,7 +978,7 @@ function drawScene() {
 	//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
 	//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
-	prepare_object_rendering(skyboxFront, 1.0);
+	prepare_object_rendering(skyboxFront,ambFactor);
 	//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -987,7 +988,7 @@ function drawScene() {
 
 	// draws the skybox back
 
-	prepare_object_rendering(skyboxBack, 1.0);
+	prepare_object_rendering(skyboxBack, ambFactor);
 	//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -997,7 +998,7 @@ function drawScene() {
 
 	// draws the skybox right of ship (left world)
 
-	prepare_object_rendering(skyboxLeft, 1.0);
+	prepare_object_rendering(skyboxLeft, ambFactor);
 	//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
 	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1007,7 +1008,7 @@ function drawScene() {
 
 	// draws the skybox left of ship (right world)
 
-	prepare_object_rendering(skyboxRight, 1.0);
+	prepare_object_rendering(skyboxRight, ambFactor);
 	//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
 	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1016,7 +1017,7 @@ function drawScene() {
 	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 	// draws the skybox top
-	prepare_object_rendering(skyboxTop, 1.0);
+	prepare_object_rendering(skyboxTop, ambFactor);
 	//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
 	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1028,7 +1029,7 @@ function drawScene() {
 	// draws the skybox bottom
 
 
-	prepare_object_rendering(skyboxBottom, 1.0)
+	prepare_object_rendering(skyboxBottom, ambFactor)
 	//translate the image of y: -230, scaled up by 200
 	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1068,7 +1069,7 @@ function drawScene() {
 
 
 	// draws the Ship
-	prepare_object_rendering(carMesh, 0.2);
+	prepare_object_rendering(carMesh,ambFactor);
 
 
 	// Aligning the Ship
