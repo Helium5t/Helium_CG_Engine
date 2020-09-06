@@ -27,6 +27,7 @@ var projectionMatrix,
 	worldMatrix,
 	gLightDir,
 	orientLight;
+	ambFactor = 1;
 
 
 //Parameters for Camera
@@ -43,7 +44,7 @@ var carY = -0.7;
 var carZ = -67;
 var correctionFactor =5;
 var correctionTime = 0;
-
+var newSector = false;
 var lookRadius = 10.0;
 
 
@@ -276,7 +277,7 @@ out vec4 color;
 void main() {
 	vec4 texcol = texture(u_texture, fs_uv);
 	float ambFact = lightDir.w;
-	float dimFact = (1.0-ambFact) * clamp(dot(normalize(fs_norm), lightDir.xyz),0.0,1.0) + ambFact;
+	float dimFact = clamp(ambFact,0.0,1.0)* clamp(dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
 	color = vec4(texcol.rgb * dimFact, texcol.a);
 }`;
 
@@ -590,7 +591,7 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rocksArray[i].indexBuffer);		
 
 		gl.uniform1i(program.textureUniform, 7);
-		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], ambFactor);
 
 
 		var alignMatrix = utils.MakeScaleMatrix(rockResize);
@@ -641,6 +642,8 @@ function startingRockBuffer(){
 		rotation1 = generateRockRotationOnMatrix(numRocks, rocksCol1, position1);
 	}
 
+	position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks,rocksCol1);
+	rotation1 = generateRockRotationOnMatrix(numRocks);
 	//da chiamare sempre e comunque anche senza modifiche
 	generateRock(position1,rotation1, numRocks, rock1)
 	generateRock(position2,rotation2, numRocks, rock2)
@@ -702,7 +705,7 @@ function distance(pointAX, pointAZ, pointBX, pointBZ) {
  * @param {number} number a numeric expression
  */
 function getHundreds(number) {
-	return parseInt(number/100);
+	return Math.trunc(number/100);
 }
 
 /** dimensions X and Z of the rock model without modifications */
@@ -1056,7 +1059,7 @@ function generateTrack(){
 	}
 
 	for(var i = 0; i<3;i++){
-		prepare_object_rendering(skybox,1.0);
+		prepare_object_rendering(skybox,ambFactor);
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale)));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
@@ -1098,8 +1101,6 @@ function floatComparison(num1, num2, cComparison) {
 	}
 }
 
-
-var done = false;
 
 function drawScene() {
 	if (!errDetected) {
@@ -1234,63 +1235,56 @@ function drawScene() {
 
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
 
+		// car motion
+		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
+		if (carX - delta[0] < -100 && delta[0] > 0) {
+			delta[0] = 100.0 + CarX;
+		}
+		if (carX - delta[0] > 100 && delta[0] < 0) {
+			delta[0] = carX - 100.0;
+		}
+
+		carX -= delta[0];
+		if (getHundreds(carZ) % 2 != 0 && getHundreds(carZ - delta[2]) % 2 == 0 && delta[2] < 0) {
+			newSector = true;
+			console.log(carZ);
+			console.log('uptick');
+			console.log(carZ - delta[2])
+		}
+
+		carZ -= delta[2];
+
+		//rockBuffer(isEven, isSectionChanged, sectionNum);
+
 		// if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
 		// 	console.log("X: " + badX + "\nZ: "  + "\n");
 		// 	console.log("LOST THE BOAT\n");
 		// 	window.location.reload(false);
 		// }
-
-		startingRockBuffer();
-
-		if (floatComparison(carZ % 150, 0.0, "===") && delta[2] < 0) {
-			done = false;
+		if (isStarting) {
+			isStarting = false;
+			startingRockBuffer();
 		}
 
-		if (floatComparison(carZ % 200, 0.0, "===") && (delta[2] < 0) && !(done)) {
-			// sono in una posizione multipla di 200 e sto avanzando e non ho gia' generato
-			// genero le rocce
+		if (newSector) {
+			newSector = false;
 			if (getHundreds(carZ) > 0) {
+				// sono in una posizione multipla di 200
 				let isEven = ((getHundreds(carZ) / 2) % 2 == 0);
 				let isSectionChanged = true;
 				let sectionNum = Math.floor(getHundreds(carZ) / 2);
-
 				rockBuffer(isEven, isSectionChanged, sectionNum);
 
-				done = true;
 			}
 		} else {
-			// casi possibili:
-			// 1. non sono in una posizione multipla di 200 e sto avanzando
-			// 2. non sono in una posizione multipla di 200 e sto indietrggiando
-			// 3. sono in una posizione multipla di 200 e sto indietreggiando
-			// fai nulla
-
+			// non sono in una posizione multipla di 200
 			rockBuffer(null, false, null);
+			// se non (sono in una posizione multipla di 200 e sto ananzando)
+			// delta e' negativa se avanzo, positiva se indietreggio
 		}
-
-		// if (floatComparison(carZ % 200, 0.0, "===") && !(done)) {
-		// 	if (getHundreds(carZ) > 0) {
-		// 		// sono in una posizione multipla di 200
-		// 		let isEven = ((getHundreds(carZ) / 2) % 2 == 0);
-		// 		let isSectionChanged = true;
-		// 		let sectionNum = Math.floor(getHundreds(carZ) / 2);
-		// 		rockBuffer(isEven, isSectionChanged, sectionNum);
-
-		// 		done = true;
-		// 	}
-		// } else {
-		// 	// non sono in una posizione multipla di 200
-		// 	rockBuffer(null, false, null);
-		// 	// se non (sono in una posizione multipla di 200 e sto avanzando)
-		// 	// delta e' negativa se avanzo, positiva se indietreggio
-		// 	if (!(floatComparison(carZ % 200, 0.0, "===")) && delta[2] < 0) {
-		// 		done = false;
-		// 	}
-		// }
 
 		//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
 		checkDeath(carX, carZ, carAngle);
-		// TODO: DE-COMMENT THE ABOVE LINE
 
 		// draws the track
 		//gl.uniform1i(program.textureUniform, 1);
@@ -1307,7 +1301,7 @@ function drawScene() {
 		//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 		//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
 		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
-		prepare_object_rendering(skyboxFront, 1.0);
+		prepare_object_rendering(skyboxFront, ambFactor);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1317,7 +1311,7 @@ function drawScene() {
 
 		// draws the skybox back
 
-		prepare_object_rendering(skyboxBack, 1.0);
+		prepare_object_rendering(skyboxBack, ambFactor);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1327,7 +1321,7 @@ function drawScene() {
 
 		// draws the skybox right of ship (left world)
 
-		prepare_object_rendering(skyboxLeft, 1.0);
+		prepare_object_rendering(skyboxLeft, ambFactor);
 		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1337,7 +1331,7 @@ function drawScene() {
 
 		// draws the skybox left of ship (right world)
 
-		prepare_object_rendering(skyboxRight, 1.0);
+		prepare_object_rendering(skyboxRight, ambFactor);
 		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1346,7 +1340,7 @@ function drawScene() {
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 		// draws the skybox top
-		prepare_object_rendering(skyboxTop, 1.0);
+		prepare_object_rendering(skyboxTop, ambFactor);
 		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1358,7 +1352,7 @@ function drawScene() {
 		// draws the skybox bottom
 
 
-		prepare_object_rendering(skyboxBottom, 1.0)
+		prepare_object_rendering(skyboxBottom, ambFactor)
 		//translate the image of y: -230, scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1398,7 +1392,7 @@ function drawScene() {
 
 
 		// draws the Ship
-		prepare_object_rendering(carMesh, 0.2);
+		prepare_object_rendering(carMesh, ambFactor);
 
 
 		// Aligning the Ship
@@ -1412,6 +1406,5 @@ function drawScene() {
 		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 		window.requestAnimationFrame(drawScene);
 	}
-
 }
 
