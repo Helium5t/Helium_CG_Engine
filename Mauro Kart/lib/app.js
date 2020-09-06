@@ -2,7 +2,6 @@
 const numRocks = 50;
 
 var canvas;
-var errDetected = false;
 var gl = null,
 	program = null,
 	carMesh = null,
@@ -19,8 +18,6 @@ var gl = null,
 	skyboxBktx = null;
 	skyboxBttx = null;
 	rocktx = null;
-var boatResize = 0.01;
-var rockResize = 1.5;
 var projectionMatrix, 
 	perspectiveMatrix,
 	viewMatrix,
@@ -202,13 +199,6 @@ function doResize() {
     }
 }
 
-/**
- * Function that open a dialog box
- * 
- * @param {string} message Message to be display
- * @param {string} title Title of the dialog to display
- * @param {string} buttonText Message to be displayed as button text
- */
 function alert2(message, title, buttonText) {
 
     buttonText = (buttonText == undefined) ? "Ok" : buttonText;
@@ -527,51 +517,41 @@ var carLinVel = 0.0;
 var carAngVel = 0.0;
 var preVz = 0;
 
-/**
- * Function that generated X and Z coordinates of the rocks
- * 
- * @param {number} lowerLimit lowest possible Z coordinate of the rocks to be generated
- * @param {number} upperLimit highest possible Z coordinate of the rocks to be generated
- * @param {number} numElements number of rocks to be generated
- * 
- * @returns an array containing the X and Z coordinate of the generated rocks
- */
-function generateRockPositionOnMatrix(lowerLimit, upperLimit, numElements){
+//DEPRECATED
+var rockPosition = [];
+var rockRotation = [];
+
+//DEPRECATED
+function generateRockPositions(lowerLimit, upperLimit, destMatrix, numElements){
+	for(i = 0; i<numElements;i++){
+		var positionX = Math.floor(Math.random() * 200) - 100;
+		var positionZ = lowerLimit + Math.floor(Math.random() * upperLimit-lowerLimit);
+		rockPosition[i] = [positionX,positionZ + getHundreds(carZ) * 100];
+		destMatrix[positionX + 100][positionZ] = true;
+		rockRotation[i] = Math.floor(Math.random() * 360);
+	}
+}
+
+function generateRockPositionOnMatrix(lowerLimit, upperLimit, numElements,destMatrix){
 	let rockPos = [];
 	for(i = 0; i<numElements;i++){
 		var positionX = Math.floor(Math.random() * 200) - 100;
 		var positionZ = lowerLimit + Math.floor(Math.random() * (upperLimit - lowerLimit));
+		destMatrix[positionX + 100][positionZ-lowerLimit] = true;
 		rockPos[i] = [positionX, positionZ];
 	}
 	return rockPos;
 }
 
-/**
- * Function that generates the rotation angles of the rocks
- * 
- * @param {number} numElements the number of rocks that need a rotation parameter
- * @param {any[][]} destMatrix matrix that store the values generated
- * @param {any[]} rocksPosition array containing the positions of the rocks
- * 
- * @returns an array containing the generated rotations for the rocks; Dom [0, 360]
- */
-function generateRockRotationOnMatrix(numElements, destMatrix, rocksPosition) {
+function generateRockRotationOnMatrix(numElements){
 	let rockRot = [];
-	for (i = 0; i < numElements; i++) {
+	for(i = 0; i<numElements;i++){
 		rockRot[i] = Math.floor(Math.random() * 360);
-		rock = rocksPosition[i];
-
-		destMatrix[rock[0] + 100][rock[1] % 200] = {
-			"X": rock[0],
-			"Z": rock[1],
-			"angle": rockRot[i]
-		};
 	}
-
 	return rockRot;
 }
 
-function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocksArray){
+function generateRock(rockPositionsArray,rockRotationsArray, numElements, rocksArray){
 	// var angleX = Math.floor(Math.random() * 360);
 	// var angleY = Math.floor(Math.random() * 360);
 	// var angleZ = Math.floor(Math.random() * 360);
@@ -594,7 +574,7 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], ambFactor);
 
 
-		var alignMatrix = utils.MakeScaleMatrix(rockResize);
+		var alignMatrix = utils.MakeScaleMatrix(1.5);
 		alignMatrix = utils.multiplyMatrices(utils.MakeRotateYMatrix(rockRotationsArray[i]),alignMatrix);
 		var rockx = rockPositionsArray[i][0];
 		var rocky = 0;
@@ -604,12 +584,12 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotationsArray[i])));
 		gl.drawElements(gl.TRIANGLES, rocksArray[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
 	}
+	
 }
 
-/**
- * Generate meshes for the rocks
- */
+// Get meshes for rocks
 function initRocks(){
 	for(i=0; i<numRocks;i++){
 		rock1[i] = new OBJ.Mesh(rockObjStr)
@@ -618,6 +598,21 @@ function initRocks(){
 		OBJ.initMeshBuffers(gl, rock2[i])
 	}
 }
+
+// 5
+// 4
+
+// 3
+
+// 2		600	p1 r1
+// 		400
+
+
+// 1		400   p2 r2
+// 		200
+
+// 0      	200    
+// 		0
 
 var position1 = [];
 var rotation1 = [];
@@ -629,18 +624,12 @@ var isStarting = true;
 var rocksCol1 = [];
 var rocksCol2 = [];
 
-/**
- * Function that initialize rock positions at the start of the game; this function MUST be called only once per game
- */
+//deve essere chiamato nel blocco 0 e basta 
+//una volta passato il blocco 0 chiamare solo la funzion rockBuffer
 function startingRockBuffer(){
-	if(isStarting){
-		isStarting = false;
-		position2 = generateRockPositionOnMatrix((1)*200, (1)*200+200, numRocks);
-		rotation2 = generateRockRotationOnMatrix(numRocks, rocksCol2, position2);
-	
-		position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks);
-		rotation1 = generateRockRotationOnMatrix(numRocks, rocksCol1, position1);
-	}
+	isStarting = false;
+	position2 = generateRockPositionOnMatrix((1)*200, (1)*200+200, numRocks,rocksCol2);
+	rotation2 = generateRockRotationOnMatrix(numRocks);
 
 	position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks,rocksCol1);
 	rotation1 = generateRockRotationOnMatrix(numRocks);
@@ -650,23 +639,20 @@ function startingRockBuffer(){
 
 }
 
-/**
- * Function to generate new rocks after the boat has reached the selected checkpoint
- * 
- * @param {boolean} isEven true if sectionNum is even, false otherwise
- * @param {boolean} isSectionChanged true if the boat has reached the checkpoint, false otherwise
- * @param {number} sectionNum int value representing the current section the boat is in
- */
+//da chiamare sempre dopo il blocco zero, parametri : 
+//isEven true se la sezione in cui sono e' pari
+//isSectionChanged true se ho cambiato la sezione  tipo da 0->1
+//sectionNum numero della sezione in cui sono
 function rockBuffer(isEven, isSectionChanged, sectionNum){
 	if(isSectionChanged){
 		if(isEven){
 			//sono in una sezione pari e genero una sezione dispari
-			position2 = generateRockPositionOnMatrix((sectionNum+1)*200, (sectionNum+1)*200+200, numRocks);
-			rotation2 = generateRockRotationOnMatrix(numRocks, rocksCol2, position2);
+			position2 = generateRockPositionOnMatrix((sectionNum+1)*200, (sectionNum+1)*200+200, numRocks,rocksCol2);
+			rotation2 = generateRockRotationOnMatrix(numRocks);
 		}else{
 			//sono in una sezione dispari e genero una sezione pari
-			position1 = generateRockPositionOnMatrix((sectionNum+1)*200, (sectionNum+1)*200+200, numRocks);
-			rotation1 = generateRockRotationOnMatrix(numRocks, rocksCol1, position1);
+			position1 = generateRockPositionOnMatrix((sectionNum+1)*200, (sectionNum+1)*200+200, numRocks,rocksCol1);
+			rotation1 = generateRockRotationOnMatrix(numRocks);
 		}
 	}
 	generateRock(position1, rotation1, numRocks, rock1)
@@ -674,369 +660,85 @@ function rockBuffer(isEven, isSectionChanged, sectionNum){
 
 }
 
-/**
- * initialize square matrices for rocks
- */
+var deathRadius = 2;
+
+// Initialize square matrices for rocks
 function initRock() {
 	for (let i = 0; i < 200; i ++) {
 		rocksCol1[i] = [];
 		rocksCol2[i] = [];
 		for (let j = 0; j < 200; j++) {
-			rocksCol1[i][j] = {"X": null, "Z": null, "angle": null};
-			rocksCol2[i][j] = {"X": null, "Z": null, "angle": null};
+			rocksCol1[i][j] = false;
+			rocksCol2[i][j] = false;
 		}
 	}
 }
 
-/**
- * @returns the distance between point A and point B in floating point format
- * @param {number} pointAX X coordinate of the first point
- * @param {number} pointAZ Z coordinate of the first point
- * @param {number} pointBX X coordinate of the second point
- * @param {number} pointBZ Z coordinate of the second point
- */
-function distance(pointAX, pointAZ, pointBX, pointBZ) {
-	return Math.sqrt(Math.pow(pointAX - pointBX, 2) + Math.pow(pointAZ - pointBZ, 2));
+
+function distance(pointX, pointY, boatX, boatY) {
+	return Math.sqrt(Math.pow(pointX - boatX, 2) + Math.pow(pointY - boatY, 2));
 }
 
-/**
- * Returns the hundreds contained in the numeric expression 
- * 
- * @param {number} number a numeric expression
- */
 function getHundreds(number) {
 	return Math.trunc(number/100);
 }
 
-/** dimensions X and Z of the rock model without modifications */
-var rockBaseDimensions = [10.029, 6.75];
-
-/** dimensions X and Z of the boat model without modifications */
-var boatBaseDimensions = [1137.463, 240.86];
-
-/**
- * build the list of verteces of a rectangle enclosing the boat
- * @param {number} centerX the X coordinate of the center of the rectangle to build
- * @param {number} centerZ the Z coordinate of the center of the rectangle to build
- * @param {number} angle the current rotation angle of the boat
- * @returns an array containing the list of verteces starting from top-left corner and going clockwise.
- */
-function buildRectangleBoat(centerX, centerZ, angle) {
-	let boatLength = boatBaseDimensions[0] * boatResize;
-	let boatWidth = boatBaseDimensions[1] * boatResize;
-
-	var rectangleVerteces;
-	var tempX, tempZ, rotatedX, rotatedZ;
-	let sin = Math.sin(get_angle(angle));
-	let cos = Math.cos(get_angle(angle));
-
-	let topLeftCorner;
-	tempX = -boatWidth / 2;
-	tempZ = boatLength / 2;
-	rotatedX = tempX * cos - tempZ * sin;
-	rotatedZ = tempX * sin + tempZ * cos;
-	topLeftCorner = [(rotatedX + centerX), (rotatedZ + centerZ)];
-
-	let topRightCorner = [];
-	tempX = boatWidth / 2;
-	tempZ = boatLength / 2;
-	rotatedX = tempX * cos - tempZ * sin;
-	rotatedZ = tempX * sin + tempZ * cos;
-	topRightCorner = [(rotatedX + centerX), (rotatedZ + centerZ)];
-
-	let bottomRightCorner = [];
-	tempX = boatWidth / 2;
-	tempZ = -boatLength / 2;
-	rotatedX = tempX * cos - tempZ * sin;
-	rotatedZ = tempX * sin + tempZ * cos;
-	bottomRightCorner = [(rotatedX + centerX), (rotatedZ + centerZ)];
-
-	let bottomLeftCorner = [];
-	tempX = -boatWidth / 2;
-	tempZ = -boatLength / 2;
-	rotatedX = tempX * cos - tempZ * sin;
-	rotatedZ = tempX * sin + tempZ * cos;
-	bottomLeftCorner = [(rotatedX + centerX), (rotatedZ + centerZ)];
-
-
-	rectangleVerteces = [topLeftCorner, topRightCorner, bottomRightCorner, bottomLeftCorner];
-
-	return rectangleVerteces;
-}
-
-/**
- * build the list of verteces of a rectangle enclosing the rock
- * @param {number} rockCenterX X coordinate of the center of the rock
- * @param {number} rockCenterZ Z coordinate of the center of the rock
- * @param {number} rockAngle angular coordinate of the rock. Dom = [0, 360]
- * @returns an array containing the list of verteces starting from top-left corner and going clockwise.
- */
-function buildRectangleRock(rockCenterX, rockCenterZ, rockAngle) {
-	var rectangleVerteces;
-
-	let rockLength = rockBaseDimensions[1] * rockResize;
-	let rockWidth = rockBaseDimensions[0] * rockResize;
-
-	var tempX, tempZ, rotatedX, rotatedZ;
-	let sin = Math.sin(get_angle(rockAngle));
-	let cos = Math.cos(get_angle(rockAngle));
-
-	let topLeftCorner = [];
-	tempX = -rockWidth / 2;
-	tempZ = rockLength / 2;
-	rotatedX = tempX * cos - tempZ * sin;
-	rotatedZ = tempX * sin + tempZ * cos;
-	topLeftCorner = [(rotatedX + rockCenterX), (rotatedZ + rockCenterZ)];
-
-	let topRightCorner = [];
-	tempX = rockWidth / 2;
-	tempZ = rockLength / 2;
-	rotatedX = tempX * cos - tempZ * sin;
-	rotatedZ = tempX * sin + tempZ * cos;
-	topRightCorner = [(rotatedX + rockCenterX), (rotatedZ + rockCenterZ)];
-
-	let bottomRightCorner = [];
-	tempX = rockWidth / 2;
-	tempZ = -rockLength / 2;
-	rotatedX = tempX * cos - tempZ * sin;
-	rotatedZ = tempX * sin + tempZ * cos;
-	bottomRightCorner = [(rotatedX + rockCenterX), (rotatedZ + rockCenterZ)];
-
-
-	let bottomLeftCorner = [];
-	tempX = -rockWidth / 2;
-	tempZ = -rockLength / 2;
-	rotatedX = tempX * cos - tempZ * sin;
-	rotatedZ = tempX * sin + tempZ * cos;
-	bottomLeftCorner = [(rotatedX + rockCenterX), (rotatedZ + rockCenterZ)];
-
-
-	rectangleVerteces = [topLeftCorner, topRightCorner, bottomRightCorner, bottomLeftCorner];
-	return rectangleVerteces;
-}
-
-/**
- * Perform the dot product of two segment in 2D-space
- * 
- * @param {array} firstVector 2 endpoints of the first segment
- * @param {array} secondVector 2 endpoints of the second segment
- * @param {number} angle angle between firstVector and secondVector
- * 
- * @returns the dot product between firstVector and secondVector
- */
-function dotProduct2D(firstVector, secondVector, angle) {
-	var lengthFirst = distance(firstVector[0][0], firstVector[0][1], firstVector[1][0], firstVector[1][1]);
-	var lengthSecond = distance(secondVector[0][0], secondVector[0][1], secondVector[1][0], secondVector[1][1]);
-
-	return lengthFirst * lengthSecond * Math.cos(get_angle(angle));
-}
-
-function dotProd(axisX, axisZ, pointX, pointZ, mainAxis) {
-	var den = Math.pow(axisX, 2) + Math.pow(axisZ, 2);
-	var num = axisX * pointX + axisZ * pointZ;
-
-	return num * mainAxis / den;
-}
-
-/**
- * Apply the SAT theorem to boat and the selected rock
- * 
- * @param {array} boatVertices list of verteces of the rectangle of the boat
- * @param {array} rockVertices list of verteces of the rectangle of the rock
- * 
- * @returns true if the boat and the rock are colliding, false otherwise
- */
-function separatingAxisTheorem(boatVertices, rockVertices) {
-	let collide = true;
-	let notCollide = false;
-
-	let axes = [
-		[boatVertices[1][0] - boatVertices[0][0], boatVertices[1][1] - boatVertices[1][0]], 
-		[boatVertices[1][0] - boatVertices[2][0], boatVertices[1][1] - boatVertices[2][1]], 
-		[rockVertices[1][0] - rockVertices[0][0], rockVertices[1][1] - rockVertices[1][0]],
-		[rockVertices[1][0] - boatVertices[2][0], rockVertices[1][1] - rockVertices[2][1]]
-	];
-
-	for (let i = 0; i < axes.length; i++) {
-		const axis = axes[i];
-		
-		var boatVertOnAxis = [
-			(dotProd(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[0]) * axis[0] + 
-				dotProd(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[1]) * axis[1])
-		];
-
-		var rockVertOnAxis = [
-			(dotProd(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[1]) * axis[1])
-		];
-
-		var bMax = boatVertOnAxis[0];
-		var	bMin = boatVertOnAxis[0];
-		var	rMax = rockVertOnAxis[0];
-		var	rMin = rockVertOnAxis[0];
-
-		for (let i = 1; i < boatVertOnAxis.length; i++) {
-			const boat = boatVertOnAxis[i];
-			const rock = rockVertOnAxis[i];
-
-			if (floatComparison(boat, bMax, ">")) {
-				bMax = boat;
-			}
-
-			if (floatComparison(boat, bMin, "<")) {
-				bMin = boat;
-			}
-
-			if (floatComparison(rock, rMax, ">")) {
-				rMax = rock;
-			}
-
-			if (floatComparison(rock, rMin, "<")) {
-				rMin = rock;
-			}
-		}
-
-		// check condition
-		// if two object are separated along one axis, then they are not colliding
-		// if two object are separated along one axis, then this method can saftly conclude computation,
-		// returning the requested value
-		var separated = (floatComparison(bMax, rMin, "<")) || (floatComparison(rMax, bMin, "<"));
-
-		if (separated) {
-			return notCollide;
-		}
-	}
-
-	return collide;
-}
-
-function checkBoundsMatrix(x, z) {
-	if (x >= 0 && x < 200 && z >= 0 && z < 200) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
-function printRockMatrix(matrix) {
-	console.log("-----------------------------\n");
-	var toPrint = "";
-	for (let i = 0; i < 200.; i++) {
-		var row = "";
-		for (let j = 0; j < 200; j++) {
-			let elem = matrix[i][j];
-
-			if (elem["X"] != null) {
-				row += "|*"
-			} else {
-				row += "| "
-			}
-		}
-
-		row += "|\n";
-
-		toPrint += row;
-	}
-
-	console.log(toPrint);
-
-	console.log("-----------------------------\n")
-}
-
-/**
- * Retrieve the list of possible colliding rocks given the actual position of the boat
- * 
- * @param {number} boatX position over X axis (unrounded) of the boat 
- * @param {number} boatZ position over Z axis (unrounded) of the boat
- * 
- * @returns the list of possible colliding rocks
- */
-function gatherRocks(boatX, boatZ) {
-	var roundedZ = Math.round(boatZ);
-
-	var offsettedX = Math.round(boatX) + 100;
-	var offsettedZ = roundedZ % 200;
-
-	var rockSize = Math.round(rockBaseDimensions[0] * rockResize);
-
-	var rocks = [];
-
-	// choice between rock1 and rock2
-	var rockMatrix;
-	if ( (Math.floor(getHundreds(roundedZ) / 2)) % 2 == 0 ) {
-		rockMatrix = rocksCol1;
-	} else {
-		rockMatrix = rocksCol2;
-	}
-
-	var startingPoint = {
-		"X": Math.floor(offsettedX - (rockSize + 3) / 2),
-		"Z": Math.floor(offsettedZ - (rockSize + 3) / 2)
-	}
+function checkDeath(roundedX, roundedZ) {
+	//console.log("ROUNDEDX: " + roundedX + "\nROUNDEDZ: " + roundedZ + "\nZ%200: " + (roundedZ%200));
+	var offsetedX = roundedX + 100;
+	var zPosition = roundedZ - getHundreds(roundedZ) * 100;
+	var directionsX = [-1, 0, 1, -1, 0, 1, -1, 0, -1];
+	var directionsZ = [-1, -1, -1, 0, 0, 0, 1, 1, 1];
 	
-	for (let deltaX = 0; deltaX < (rockSize + 2); deltaX++) {
-		for (let deltaZ = 0; deltaZ < (rockSize + 2); deltaZ++) {
-			let elem;
+	if (roundedZ % 200 >= 100) { //use rocks2
+		for (i = 0; i < deathRadius; i++) {
+			for (j = 0; j < directionsX.length; j++) {
+				if (rocks2[offsetedX + directionsX[j] * deathRadius][zPosition + directionsZ[j] * deathRadius]) {
 
-			if(checkBoundsMatrix( (startingPoint["X"] + deltaX), (startingPoint["Z"] + deltaZ))) {
-				elem = rockMatrix[startingPoint["X"] + deltaX][startingPoint["Z"] + deltaZ];
-			}
+					//console.log("X: " + offsetedX + directionsX[j] * deathRadius + "\nZ: " + zPosition + directionsZ[j] * deathRadius + "\n")
 
-			if (elem) {
-				if (elem["X"] != null) {
-					rocks.push(elem);
+		 			//console.log("/ndistance: " + d);
+		 			//console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
+			 		//console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
+					return true;
 				}
 			}
-
 		}
-	}
 
-	return rocks;
-}
+		// for (i = 0; i < 200; i++) {
+		// 	for (j = 0; j < 200; j++) {
+		// 		if (rocks2[i][j]) {
+		// 			var d = distance((i-100), j, roundedX, roundedZ);
+					
+		// 			if (Math.round(parseFloat(d)) <= parseFloat(deathRadius)) {
+		// 				// collision
+		// 				console.log("/ndistance: " + d);
+		// 				console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
+		// 				console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
+		// 			}
+		// 		}
+				
+		// 	}
+		// }
+	} else { //use rocks1
 
-/**
- * check if the the boat collides with a rock
- * @param {number} posX the current X position of the boat
- * @param {number} posZ the current Z position of the boat 
- * @param {number} angle current orientation of the boat
- */
-function checkDeath(posX, posZ, angle) {
-	// build a rectangle around the center of the boat
-	var boatRectangle = buildRectangleBoat(posX, posZ, angle);	
-	
-	// get nearby rocks
-	var nearbyRocks = gatherRocks(posX, posZ);
-	//magic for gathering nearbyRocks
 
-	// check collisions with the rock
-	for (let i = 0; i < nearbyRocks.length; i++) {
-		const rock = nearbyRocks[i];
 
-		let rockX = rock["X"];
-		let rockZ = rock["Z"];
-		let rockAngle = rock["angle"];
-
-		var collision = separatingAxisTheorem(boatRectangle, buildRectangleRock(rockX, rockZ, rockAngle));
-
-		if (collision) {
-			// collision detected, launch the error function
-			// console.log("COLLISION DETECTED");
-			errDetected = true;
-
-			alert2("YOU HAVE FAILED!!!!!!!", "", "Try Again");
-		}
+		// for (i = 0; i < 200; i++) {
+		// 	for (j = 0; j < 200; j++) {
+		// 		if (rocks1[i][j]) {
+		// 			var d = distance((i-100), j, roundedX, roundedZ);
+					
+		// 			if (Math.round(parseFloat(d)) <= parseFloat(deathRadius)) {
+		// 				// collision
+		// 				console.log("/ndistance: " + d);
+		// 				console.log("DEATH BY ROCK: " + i + ".." + j + "\n");
+		// 				console.log("logging data:\ni: " + i + "\nj: " + j + "\nroundedx: "+ roundedX + "\nroundedZ: " + roundedZ)
+		// 			}
+		// 		}
+				
+		// 	}
+		// }
 	}
 }
 
@@ -1050,6 +752,7 @@ function prepare_object_rendering(object,light_mul){
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 }
+
 
 function generateTrack(){
 	// draws the skybox
@@ -1068,33 +771,25 @@ function generateTrack(){
 	}
 }
 
-/**
- * collection of comparison results of the main bool operations.
- * 
- * @returns either true or false based on the numbers and the comparison to compute
- * @param {number} num1 first number to compare
- * @param {number} num2 second number to compare
- * @param {string} cComparison comparison to execute
- */
 function floatComparison(num1, num2, cComparison) {
 	switch (cComparison) {
 		case ">":
-			return parseFloat(num1) > parseFloat(num2);
+			return Math.round(parseFloat(num1)) > Math.round(parseFloat(num2));
 		
 		case "<":
-			return parseFloat(num1) < parseFloat(num2);
+			return Math.round(parseFloat(num1)) < Math.round(parseFloat(num2));
 
 		case ">=":
-			return parseFloat(num1) >= parseFloat(num2);
+			return Math.round(parseFloat(num1)) >= Math.round(parseFloat(num2));
 
 		case "<=":
-			return parseFloat(num1) <= parseFloat(num2);
+			return Math.round(parseFloat(num1)) <= Math.round(parseFloat(num2));
 		
 		case "==":
-			return parseFloat(num1) == parseFloat(num2);
+			return Math.round(parseFloat(num1)) == Math.round(parseFloat(num2));
 	
 		case "===":
-			return parseFloat(num1) === parseFloat(num2);
+			return Math.round(parseFloat(num1)) === Math.round(parseFloat(num2));
 
 		default:
 			return false;
@@ -1103,308 +798,289 @@ function floatComparison(num1, num2, cComparison) {
 
 
 function drawScene() {
-	if (!errDetected) {
-		// compute time interval
-		// console.log('X: ' + carX);
-		// console.log('Z: ' + carZ);
-
-		var currentTime = (new Date).getTime();
-		var deltaT;
-		if (lastUpdateTime) {
-			deltaT = (currentTime - lastUpdateTime) / 1000.0;
-		} else {
-			deltaT = 1 / 50;
-		}
-		lastUpdateTime = currentTime;
-
-		// call user procedure for world-view-projection matrices
-		wvpMats = worldViewProjection(carX, carY, carZ, carAngle, cx, cy, cz);
-		// the generated matrices (one world and 2 is projection) depend on the boat's position and direction, 
-		// the world is a rotation by CarDir degrees and translation over to the boat's coordinates
-
-		// //re align boat
-		// if(keys[37] == false){
-		// 	carAngle = carAngle*((lastUpdateTime+3000)-currentTime)
-		// }
-
-		viewMatrix = wvpMats[1];
-
-		perspectiveMatrix = projection = utils.MakePerspective(60, aspectRatio, 0.1, 2000.0);
-
-		// dvecmat is actually the world matrix at the moment
-		dvecmat = wvpMats[0];
-
-		// computing car velocities
-		carAngVel = mAS * deltaT * rvy;
-		//console.log(carAngVel)
-
-		vz = -vz;
-		// = 0.8 * deltaT * 60 * vz;
-		if (vz > 0.1) {
-			if (preVz > 0.1) {
-				carLinAcc = carLinAcc + ATur * deltaT;
-
-				if (carLinAcc > mAT) carLinAcc = mAT;
-			} else if (carLinAcc < sAT) carLinAcc = sAT;
-		} else if (vz > -0.1) {
-			carLinAcc = carLinAcc - ATdr * deltaT * Math.sign(carLinAcc);
-			if (Math.abs(carLinAcc) < 0.001) carLinAcc = 0.0;
-		} else {
-			if (preVz < 0.1) {
-				carLinAcc = carLinAcc - BTur * deltaT;
-				if (carLinAcc < -mBT) carLinAcc = -mBT;
-			} else if (carLinAcc > -sBT) carLinAcc = -sBT;
-		}
-		preVz = vz;
-		vz = -vz;
-		carLinVel = carLinVel * Math.exp(Tfric * deltaT) - deltaT * carLinAcc;
-
-		if (Math.abs(carLinVel) < 0.01 && !vz) {
-			carLinVel = 0.0;
-		}
-		//console.log(carLinVel)
-
-		// Magic for moving the car
-		worldMatrix = utils.multiplyMatrices(dvecmat, utils.MakeScaleMatrix(1.0));
-		xaxis = [dvecmat[0], dvecmat[4], dvecmat[8]]; //axises transformed by the world matrix (boat position)
-		yaxis = [dvecmat[1], dvecmat[5], dvecmat[9]];
-		zaxis = [dvecmat[2], dvecmat[6], dvecmat[10]];
-
-		if (rvy != 0) {
-			qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(carAngVel));
-			newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);  // New world matrix after the boat rotation has been computed according to angular speed
-			R11 = newDvecmat[10]; R12 = newDvecmat[8]; R13 = newDvecmat[9];
-			R21 = newDvecmat[2]; R22 = newDvecmat[0]; R23 = newDvecmat[1];
-			R31 = newDvecmat[6]; R32 = newDvecmat[4]; R33 = newDvecmat[5];
-
-			if ((R31 < 1) && (R31 > -1)) {
-				theta = -Math.asin(R31);
-				phi = Math.atan2(R32 / Math.cos(theta), R33 / Math.cos(theta));
-				psi = Math.atan2(R21 / Math.cos(theta), R11 / Math.cos(theta));
-
-			} else {
-				phi = 0;
-				if (R31 <= -1) {
-					theta = Math.PI / 2;
-					psi = phi + Math.atan2(R12, R13);
-				} else {
-					theta = -Math.PI / 2;
-					psi = Math.atan2(-R12, -R13) - phi;
-				}
-			}
-			//			elevation = theta/Math.PI*180;
-			//			roll      = phi/Math.PI*180;
-			//			angle     = psi/Math.PI*180;
-			carAngle = psi / Math.PI * 180;
-			if (Math.round(parseFloat(carAngle)) > parseFloat(90.0)) {
-				carAngle = 90.0;
-			}
-			if (Math.round(parseFloat(carAngle)) < parseFloat(0.0 - 90.0)) {
-				carAngle = 0.0 - 90.0;
-			}
-			//console.log(carAngle);
-		}
-		// spring-camera system
-		// target coordinates
-		nC = utils.multiplyMatrixVector(worldMatrix, [0, 5, -10, 1]);
-		// distance from target
-
-		deltaCam = [cx - nC[0], cy - nC[1], cz - nC[2]];
-
-		camAcc = [-fSk * deltaCam[0] - fDk * camVel[0], -fSk * deltaCam[1] - fDk * camVel[1], -fSk * deltaCam[2] - fDk * camVel[2]];
-
-		camVel = [camVel[0] + camAcc[0] * deltaT, camVel[1] + camAcc[1] * deltaT, camVel[2] + camAcc[2] * deltaT];
-		cx += camVel[0] * deltaT;
-		cy += camVel[1] * deltaT;
-		cz += camVel[2] * deltaT;
-
-		// car motion
-		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
-
-		if (carX < -100 && delta[0] > 0) {
-			delta[0] = 0
-		}
-		if (carX > 100 && delta[0] < 0) {
-			delta[0] = 0
-		}
-
-		carX -= delta[0];
-		carZ -= delta[2];
-
-		//		console.log("X: " + carX + "\nZ: " + carZ + "\n")
-
-		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
-
-		// car motion
-		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
-		if (carX - delta[0] < -100 && delta[0] > 0) {
-			delta[0] = 100.0 + CarX;
-		}
-		if (carX - delta[0] > 100 && delta[0] < 0) {
-			delta[0] = carX - 100.0;
-		}
-
-		carX -= delta[0];
-		if (getHundreds(carZ) % 2 != 0 && getHundreds(carZ - delta[2]) % 2 == 0 && delta[2] < 0) {
-			newSector = true;
-			console.log(carZ);
-			console.log('uptick');
-			console.log(carZ - delta[2])
-		}
-
-		carZ -= delta[2];
-
-		//rockBuffer(isEven, isSectionChanged, sectionNum);
-
-		// if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
-		// 	console.log("X: " + badX + "\nZ: "  + "\n");
-		// 	console.log("LOST THE BOAT\n");
-		// 	window.location.reload(false);
-		// }
-		if (isStarting) {
-			isStarting = false;
-			startingRockBuffer();
-		}
-
-		if (newSector) {
-			newSector = false;
-			if (getHundreds(carZ) > 0) {
-				// sono in una posizione multipla di 200
-				let isEven = ((getHundreds(carZ) / 2) % 2 == 0);
-				let isSectionChanged = true;
-				let sectionNum = Math.floor(getHundreds(carZ) / 2);
-				rockBuffer(isEven, isSectionChanged, sectionNum);
-
-			}
-		} else {
-			// non sono in una posizione multipla di 200
-			rockBuffer(null, false, null);
-			// se non (sono in una posizione multipla di 200 e sto ananzando)
-			// delta e' negativa se avanzo, positiva se indietreggio
-		}
-
-		//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
-		checkDeath(carX, carZ, carAngle);
-
-		// draws the track
-		//gl.uniform1i(program.textureUniform, 1);
-		//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-		generateTrack();
-
-		// draws the skybox front
-
-		//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.vertexBuffer);
-		//gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxFront.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.textureBuffer);
-		//gl.vertexAttribPointer(program.textureCoordAttribute, skyboxFront.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.normalBuffer);
-		//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
-		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
-		prepare_object_rendering(skyboxFront, ambFactor);
-		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 3);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
-		// draws the skybox back
-
-		prepare_object_rendering(skyboxBack, ambFactor);
-		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 9);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
-		// draws the skybox right of ship (left world)
-
-		prepare_object_rendering(skyboxLeft, ambFactor);
-		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 4);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
-		// draws the skybox left of ship (right world)
-
-		prepare_object_rendering(skyboxRight, ambFactor);
-		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 5);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
-		// draws the skybox top
-		prepare_object_rendering(skyboxTop, ambFactor);
-		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 6);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
-
-		// draws the skybox bottom
-
-
-		prepare_object_rendering(skyboxBottom, ambFactor)
-		//translate the image of y: -230, scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
-		gl.uniform1i(program.textureUniform, 8);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
-
-		// // draws the rock
-		// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].vertexBuffer);
-		// gl.vertexAttribPointer(program.vertexPositionAttribute, rock[0].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].textureBuffer);
-		// gl.vertexAttribPointer(program.textureCoordAttribute, rock[0].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-		// gl.bindBuffer(gl.ARRAY_BUFFER, rock.normalBuffer);
-		// gl.vertexAttribPointer(program.vertexNormalAttribute, rock[0].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-		// gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock[0].indexBuffer);		
-
-		// gl.uniform1i(program.textureUniform, 7);
-		// gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
-
-		// // Aligning the Rock
-		// var alignMatrix = utils.MakeScaleMatrix(1.5);
-		// alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
-
-		// var rockx = 0;
-		// var rocky = 0;
-		// var rockz = 56;
-		// WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
-		// gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		// gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
-		// gl.drawElements(gl.TRIANGLES, rock[0].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-
-
-		//generateRock();
-
-
-		// draws the Ship
-		prepare_object_rendering(carMesh, ambFactor);
-
-
-		// Aligning the Ship
-		var alignMatrix = utils.MakeScaleMatrix(0.01);
-		alignMatrix = utils.multiplyMatrices(alignMatrix, utils.MakeRotateYMatrix(90));
-
-		WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix), alignMatrix);
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
-		gl.uniform1i(program.textureUniform, 0);
-		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-		window.requestAnimationFrame(drawScene);
+	// compute time interval
+	//console.log('X: ' + carX);
+	//console.log('Z: ' + carZ);
+	
+	var currentTime = (new Date).getTime();
+	var deltaT;
+	if (lastUpdateTime) {
+		deltaT = (currentTime - lastUpdateTime) / 1000.0;
+	} else {
+		deltaT = 1 / 50;
 	}
+	lastUpdateTime = currentTime;
+
+	// call user procedure for world-view-projection matrices
+	wvpMats = worldViewProjection(carX, carY, carZ, carAngle, cx, cy, cz);
+	// the generated matrices (one world and 2 is projection) depend on the boat's position and direction, 
+	// the world is a rotation by CarDir degrees and translation over to the boat's coordinates
+
+	// //re align boat
+	// if(keys[37] == false){
+	// 	carAngle = carAngle*((lastUpdateTime+3000)-currentTime)
+	// }
+
+	viewMatrix = wvpMats[1];
+
+	perspectiveMatrix = projection = utils.MakePerspective(60, aspectRatio, 0.1, 2000.0);
+
+	// dvecmat is actually the world matrix at the moment
+	dvecmat = wvpMats[0];
+
+	// computing car velocities
+	carAngVel = mAS * deltaT * rvy;
+	//console.log(carAngVel)
+
+	vz = -vz;
+	// = 0.8 * deltaT * 60 * vz;
+	if (vz > 0.1) {
+		if (preVz > 0.1) {
+			carLinAcc = carLinAcc + ATur * deltaT;
+			
+			if (carLinAcc > mAT) carLinAcc = mAT;
+		} else if (carLinAcc < sAT) carLinAcc = sAT;
+	} else if (vz > -0.1) {
+		carLinAcc = carLinAcc - ATdr * deltaT * Math.sign(carLinAcc);
+		if (Math.abs(carLinAcc) < 0.001) carLinAcc = 0.0;
+	} else {
+		if (preVz < 0.1) {
+			carLinAcc = carLinAcc - BTur * deltaT;
+			if(carLinAcc < -mBT) carLinAcc = -mBT;
+		} else if(carLinAcc > -sBT) carLinAcc = -sBT;
+	  }
+	  preVz = vz;
+	  vz = -vz;
+	  carLinVel = carLinVel * Math.exp(Tfric * deltaT) - deltaT * carLinAcc;
+
+	  if(Math.abs(carLinVel)<0.01 && !vz){
+		  carLinVel = 0.0;
+	  }
+	  //console.log(carLinVel)
+	  
+	// Magic for moving the car
+	worldMatrix = utils.multiplyMatrices(dvecmat, utils.MakeScaleMatrix(1.0));
+	xaxis = [dvecmat[0], dvecmat[4], dvecmat[8]]; //axises transformed by the world matrix (boat position)
+	yaxis = [dvecmat[1], dvecmat[5], dvecmat[9]];
+	zaxis = [dvecmat[2], dvecmat[6], dvecmat[10]];
+
+	if (rvy != 0) {
+		qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(carAngVel));
+		newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);  // New world matrix after the boat rotation has been computed according to angular speed
+		R11 = newDvecmat[10]; R12 = newDvecmat[8]; R13 = newDvecmat[9];
+		R21 = newDvecmat[2]; R22 = newDvecmat[0]; R23 = newDvecmat[1];
+		R31 = newDvecmat[6]; R32 = newDvecmat[4]; R33 = newDvecmat[5];
+
+		if ((R31 < 1) && (R31 > -1)) {
+			theta = -Math.asin(R31);
+			phi = Math.atan2(R32 / Math.cos(theta), R33 / Math.cos(theta));
+			psi = Math.atan2(R21 / Math.cos(theta), R11 / Math.cos(theta));
+
+		} else {
+			phi = 0;
+			if (R31 <= -1) {
+				theta = Math.PI / 2;
+				psi = phi + Math.atan2(R12, R13);
+			} else {
+				theta = -Math.PI / 2;
+				psi = Math.atan2(-R12, -R13) - phi;
+			}
+		}
+		//			elevation = theta/Math.PI*180;
+		//			roll      = phi/Math.PI*180;
+		//			angle     = psi/Math.PI*180;
+		carAngle = psi / Math.PI * 180;
+		if (Math.round(parseFloat(carAngle)) > parseFloat(90.0)) {
+			carAngle = 90.0;
+		}
+		if (Math.round(parseFloat(carAngle)) < parseFloat(0.0 - 90.0)) {
+			carAngle = 0.0 - 90.0;
+		}
+		//console.log(carAngle);
+	}
+	// spring-camera system
+	// target coordinates
+	nC = utils.multiplyMatrixVector(worldMatrix, [0, 5, -10, 1]);
+	// distance from target
+
+	deltaCam = [cx - nC[0], cy - nC[1], cz - nC[2]];
+
+	camAcc = [-fSk * deltaCam[0] - fDk * camVel[0], -fSk * deltaCam[1] - fDk * camVel[1], -fSk * deltaCam[2] - fDk * camVel[2]];
+
+	camVel = [camVel[0] + camAcc[0] * deltaT, camVel[1] + camAcc[1] * deltaT, camVel[2] + camAcc[2] * deltaT];
+	cx += camVel[0] * deltaT;
+	cy += camVel[1] * deltaT;
+	cz += camVel[2] * deltaT;
+
+	// car motion
+	delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
+	if (carX - delta[0] < -100 && delta[0] > 0) {
+		delta[0] = 100.0 + CarX;
+	}
+	if (carX  - delta[0] > 100 && delta[0] < 0) {
+		delta[0] = carX - 100.0;
+	}
+	
+	carX -= delta[0];
+	if( getHundreds(carZ) %2 != 0 && getHundreds(carZ - delta[2]) %2 == 0 && delta[2] < 0 ){
+		newSector = true;
+		console.log(carZ);
+		console.log('uptick');
+		console.log(carZ-delta[2])
+	}
+
+	carZ -= delta[2];
+
+	projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
+
+	// if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
+	// 	console.log("X: " + badX + "\nZ: "  + "\n");
+	// 	console.log("LOST THE BOAT\n");
+	// 	window.location.reload(false);
+	// }
+	if(isStarting){
+		isStarting = false;
+		startingRockBuffer();
+	}
+
+	if (newSector) {
+		newSector = false;
+		if (getHundreds(carZ) > 0) {
+			// sono in una posizione multipla di 200
+			let isEven = ((getHundreds(carZ) / 2) % 2 == 0);
+			let isSectionChanged = true;
+			let sectionNum = Math.floor(getHundreds(carZ) / 2);
+			rockBuffer(isEven, isSectionChanged, sectionNum);
+
+		}
+	} else {
+		// non sono in una posizione multipla di 200
+		rockBuffer(null, false, null);
+		// se non (sono in una posizione multipla di 200 e sto ananzando)
+		// delta e' negativa se avanzo, positiva se indietreggio
+	}
+
+	//checkDeath(Math.round(parseFloat(carX)), Math.round(parseFloat(carZ)));
+	// ANNOTATION: DE-COMMENT THE ABOVE LINE
+
+	// draws the track
+	//gl.uniform1i(program.textureUniform, 1);
+	//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+	generateTrack();
+
+	// draws the skybox front
+
+	//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.vertexBuffer);
+	//gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxFront.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.textureBuffer);
+	//gl.vertexAttribPointer(program.textureCoordAttribute, skyboxFront.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.normalBuffer);
+	//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
+	//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
+	prepare_object_rendering(skyboxFront,ambFactor);
+	//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 3);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// draws the skybox back
+
+	prepare_object_rendering(skyboxBack, ambFactor);
+	//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 9);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// draws the skybox right of ship (left world)
+
+	prepare_object_rendering(skyboxLeft, ambFactor);
+	//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 4);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// draws the skybox left of ship (right world)
+
+	prepare_object_rendering(skyboxRight, ambFactor);
+	//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 5);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+	// draws the skybox top
+	prepare_object_rendering(skyboxTop, ambFactor);
+	//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 6);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+
+	// draws the skybox bottom
+
+
+	prepare_object_rendering(skyboxBottom, ambFactor)
+	//translate the image of y: -230, scaled up by 200
+	WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+	gl.uniform1i(program.textureUniform, 8);
+	gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+
+
+	// // draws the rock
+	// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].vertexBuffer);
+	// gl.vertexAttribPointer(program.vertexPositionAttribute, rock[0].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].textureBuffer);
+	// gl.vertexAttribPointer(program.textureCoordAttribute, rock[0].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	// gl.bindBuffer(gl.ARRAY_BUFFER, rock.normalBuffer);
+	// gl.vertexAttribPointer(program.vertexNormalAttribute, rock[0].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	// gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock[0].indexBuffer);		
+
+	// gl.uniform1i(program.textureUniform, 7);
+	// gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
+
+	// // Aligning the Rock
+	// var alignMatrix = utils.MakeScaleMatrix(1.5);
+	// alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
+
+	// var rockx = 0;
+	// var rocky = 0;
+	// var rockz = 56;
+	// WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
+	// gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
+	// gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
+	// gl.drawElements(gl.TRIANGLES, rock[0].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+
+
+	//generateRock();
+
+
+	// draws the Ship
+	prepare_object_rendering(carMesh,ambFactor);
+
+
+	// Aligning the Ship
+	var alignMatrix = utils.MakeScaleMatrix(0.01);
+	alignMatrix = utils.multiplyMatrices(alignMatrix, utils.MakeRotateYMatrix(90));
+
+	WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix), alignMatrix);
+	gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+	gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
+	gl.uniform1i(program.textureUniform, 0);
+	gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+	window.requestAnimationFrame(drawScene);		
 }
 
