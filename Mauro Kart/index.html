@@ -1,26 +1,61 @@
 <!doctype html>
 <html>
-	<head>
-		<title>Mauro Kart</title>
-		<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
-		<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
-		<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css" />
-		<script src="WorldView.js"></script>
-        <script src="lib/model.js"></script>
-		<script src="../helium_lib.js"></script>
-        <script src="lib/texture.js"></script>
-        <script src="lib/webgl-obj-loader.min.js"></script>
-        <script src="lib/quaternion.min.js"></script>
-		<script src="lib/utils.js"></script>
-		<script src="lib/app.js"></script>
-		</head>
-	
-	<body style="background-color: white;" onLoad="main();">
 
-		<canvas id="my-canvas" width='100' height='100' style="background-color: white;">
-			Your browser doesn't support the Canvas Element!
-		</canvas>
-		<!-- <center>
+<head>
+	<title>BOAT RUNNER | EQJ</title>
+	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css" />
+	<script src="WorldView.js"></script>
+	<script src="lib/model.js"></script>
+	<script src="../helium_lib.js"></script>
+	<script src="lib/texture.js"></script>
+	<script src="lib/webgl-obj-loader.min.js"></script>
+	<script src="lib/quaternion.min.js"></script>
+	<script src="lib/utils.js"></script>
+	<script src="lib/app.js"></script>
+</head>
+
+<body style="background-color: white;" onLoad="main();">
+	<div style="display: flex; justify-content: center; 
+		font-size: 400%; font-family: 'Anonimous Pro', monospace;
+		margin-bottom: 10px;">
+		<div>BOAT RUNNER</div>
+	</div>
+
+	<div style="display: flex; justify-content: space-around;">
+		<div id="canvas-container" style="max-width: 70%">
+			<canvas id="my-canvas" width='100' height='100' style="background-color: white;">
+				Your browser doesn't support the Canvas Element!
+			</canvas>
+		</div>
+		<div id="left-pane" style="max-width: 40%">
+			<div style="font-family: 'Anonimous Pro', monospace; font-size: 150%; margin-bottom: 30px;">
+				Controls
+			</div>
+			<div style="margin-bottom: 30px;">
+				<div style="font-family: 'Anonimous Pro, monospace';">Select the daytime</div>
+				<input id="daylight" type="range" min="1" max="24" step="1.0" value="12">
+			</div>
+			<div style="margin-bottom: 30px; display: flex;">
+				<input type="checkbox" name="Lights" id="boat-lights" style="margin-right: 20px;">
+				<div style="font-family: 'Anonimous Pro, monospace';">Boat light</div>
+			</div>
+			<div style="margin-bottom: 30px; display: flex;">
+				<input type="color" name="boat-light-color" id="boat-light-color" value="#FFFFFF" style="margin-right: 5px;">
+				<div style="font-family: 'Anonimous Pro, monospace';">
+					Boat light color
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- 
+		TOCCO FINALE SAREBBERO GLI SHANTY DI BLACK FLAG COME SOTTOFONDO
+	 -->
+
+
+	<!-- <center>
 			<h1>Use the following keys to move the car</h1>
 			<table border="1">
 			  <tr>
@@ -35,8 +70,8 @@
 			  </tr>
 			</table>
 		</center> -->
-		<div id="dialog1" title="Dialog Title" hidden="hidden">I'm a dialog</div>
+	<div id="dialog1" title="Dialog Title" hidden="hidden">I'm a dialog</div>
 
-	</body>
+</body>
 
 </html>

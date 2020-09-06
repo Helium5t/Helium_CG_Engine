@@ -190,7 +190,7 @@ function doResize() {
     // set canvas dimensions
 	var canvas = document.getElementById("my-canvas");
     if((window.innerWidth > 40) && (window.innerHeight > 240)) {
-		canvas.width  = window.innerWidth-16;
+		canvas.width  = (window.innerWidth-16) * 0.7;
 		canvas.height = window.innerHeight-200;
 		var w=canvas.clientWidth;
 		var h=canvas.clientHeight;
@@ -340,7 +340,7 @@ function main(){
 	window.addEventListener("keyup", keyFunctionUp, false);
 	window.addEventListener("keydown", keyFunctionDown, false);
 	window.onresize = doResize;
-	canvas.width  = window.innerWidth-16;
+	canvas.width  = (window.innerWidth-16) * 0.7;
 	canvas.height = window.innerHeight-200;
 	
 	try{
@@ -636,7 +636,7 @@ function startingRockBuffer(){
 	rotation2 = generateRockRotationOnMatrix(numRocks, rocksCol2, position2);
 
 	position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks);
-	rotation1 = generateRockRotationOnMatrix(numRocks, rocksCol2, position2);
+	rotation1 = generateRockRotationOnMatrix(numRocks, rocksCol1, position1);
 	//da chiamare sempre e comunque anche senza modifiche
 	generateRock(position1,rotation1, numRocks, rock1)
 	generateRock(position2,rotation2, numRocks, rock2)
