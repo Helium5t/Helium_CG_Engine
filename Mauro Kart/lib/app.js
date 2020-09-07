@@ -949,7 +949,8 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 
 /**
  * 
- * @param {time} hour 
+ * @param {number} hour 
+ * @returns {array} light vector
  */
 function HourToSunlight(hour){
 	var angle = (hour - 6.0) * 15.0;
@@ -977,10 +978,35 @@ function HourToSunlight(hour){
 			}
 		}
 	}
-	console.log(lightVec[3])
+	console.log(lightVec)
 	return lightVec;
 }
 
+
+
+
+/**
+ * 
+ * @param {number} hour 
+ * @param {float} carZ
+ * @returns {array} moon Position in an array of 3 elements X, Y, Z.
+ */
+
+function moonPosition(hour, carZ){
+	var moonPos = [40.0, 0.0, 100];
+	var angle = (hour - 6.0) * 15.0;
+	var r = 40;
+
+	console.log(angle);
+
+	//if(angle < 0.0 || angle > 180){
+		moonPos[0] = r * Math.cos(angle * Math.PI / 180);
+		moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
+		moonPos[2] = carZ + 100;
+	//}
+	console.log(moonPos)
+	return moonPos;
+}
 
 function checkBoundsMatrix(x, z) {
 	if (x >= 0 && x < 200 && z >= 0 && z < 200) {
@@ -1039,6 +1065,8 @@ function gatherRocks(boatX, boatZ) {
 
 	return rocks;
 }
+
+
 
 /**
  * check if the the boat collides with a rock
@@ -1152,6 +1180,7 @@ function drawScene() {
 		// console.log('X: ' + carX);
 		// console.log('Z: ' + carZ);
 		gLightDir = HourToSunlight(TimeOfDay.value);
+		moonPosition(TimeOfDay.value);
 		//console.log(gLightDir[3])
 		var currentTime = (new Date).getTime();
 		var deltaT;
