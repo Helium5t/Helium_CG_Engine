@@ -26,6 +26,7 @@ var projectionMatrix,
 	viewMatrix,
 	worldMatrix,
 	gLightDir,
+	moonPos,
 	orientLight;
 	ambFactor = 1;
 
@@ -275,15 +276,19 @@ in vec2 fs_uv;
 uniform float LampOn;
 uniform sampler2D u_texture;
 uniform vec4 lightDir;
+uniform vec3 moonPos;
 //uniform float ambFact;
+
 
 out vec4 color;
 
 void main() {
+	vec3 moonLightDir = normalize(moonPos - fs_pos);
+	float dimMoonLight  = clamp(dot(normalize(fs_norm), moonLightDir),0.0,1.0);
 	vec4 texcol = texture(u_texture, fs_uv);
 	float ambFact = lightDir.w;
 	float dimFact = clamp(ambFact,0.0,1.0)* clamp(dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
-	color = vec4(texcol.rgb * dimFact, texcol.a);
+	color = vec4(texcol.rgb * (dimMoonLight+dimFact), texcol.a);
 }`;
 
 // event handler
@@ -461,6 +466,7 @@ function main(){
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
 		// adding cusotm lights
 		program.LampOn = gl.getUniformLocation(program,"LampOn");
+		program.moonPos = gl.getUniformLocation(program,"moonPos");
 //		program.ambFact = gl.getUniformLocation(program, "ambFact");
 		//OBJ.initMeshBuffers(gl, rock[0])
 		OBJ.initMeshBuffers(gl, carMesh);
@@ -955,7 +961,8 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 
 /**
  * 
- * @param {time} hour 
+ * @param {number} hour 
+ * @returns {array} light vector
  */
 function HourToSunlight(hour){
 	var angle = (hour - 6.0) * 15.0;
@@ -978,9 +985,35 @@ function HourToSunlight(hour){
 			}
 		}
 	}
+
+	console.log(lightVec)
 	return lightVec;
 }
 
+
+
+
+/**
+ * 
+ * @param {number} hour 
+ * @returns {array} moon Position in an array of 3 elements X, Y, Z.
+ */
+
+function moonPosition(hour){
+	var moonPos = [1000.0, 0.0, 200];
+	var angle = (hour - 6.0) * 15.0;
+	var r = 40;
+
+	console.log(angle);
+
+	//if(angle < 0.0 || angle > 180){
+		moonPos[0] = r * Math.cos(angle * Math.PI / 180);
+		moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
+		moonPos[2] = carZ + 100;
+	//}
+	console.log(moonPos);
+	return moonPos;
+}
 
 function checkBoundsMatrix(x, z) {
 	if (x >= 0 && x < 200 && z >= 0 && z < 200) {
@@ -1040,6 +1073,8 @@ function gatherRocks(boatX, boatZ) {
 	return rocks;
 }
 
+
+
 /**
  * check if the the boat collides with a rock
  * @param {number} posX the current X position of the boat
@@ -1089,6 +1124,7 @@ function prepare_object_rendering(object,light_mul){
 	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
 	gl.uniform1f(program.LampOn, LampOn.checked);
+	gl.uniform3f(program.moonPos,moonPos[0],moonPos[1],moonPos[2]);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 }
 
@@ -1153,6 +1189,7 @@ function drawScene() {
 		// console.log('X: ' + carX);
 		// console.log('Z: ' + carZ);
 		gLightDir = HourToSunlight(TimeOfDay.value);
+		moonPos = moonPosition(TimeOfDay.value);
 		//console.log(gLightDir[3])
 		var currentTime = (new Date).getTime();
 		var deltaT;
