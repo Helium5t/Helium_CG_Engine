@@ -26,6 +26,7 @@ var projectionMatrix,
 	viewMatrix,
 	worldMatrix,
 	gLightDir,
+	moonPos,
 	orientLight;
 	ambFactor = 1;
 
@@ -275,15 +276,19 @@ in vec2 fs_uv;
 uniform float LampOn;
 uniform sampler2D u_texture;
 uniform vec4 lightDir;
+uniform vec3 moonPos;
 //uniform float ambFact;
+
 
 out vec4 color;
 
 void main() {
+	vec3 moonLightDir = normalize(moonPos - fs_pos);
+	float dimMoonLight  = clamp(dot(normalize(fs_norm), moonLightDir),0.0,1.0);
 	vec4 texcol = texture(u_texture, fs_uv);
 	float ambFact = lightDir.w;
 	float dimFact = clamp(ambFact,0.0,1.0)* clamp(dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
-	color = vec4(texcol.rgb * dimFact, texcol.a);
+	color = vec4(texcol.rgb * (dimMoonLight+dimFact), texcol.a);
 }`;
 
 // event handler
@@ -461,6 +466,7 @@ function main(){
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
 
 		program.LampOn = gl.getUniformLocation(program,"LampOn");
+		program.moonPos = gl.getUniformLocation(program,"moonPos");
 //		program.ambFact = gl.getUniformLocation(program, "ambFact");
 		//OBJ.initMeshBuffers(gl, rock[0])
 		OBJ.initMeshBuffers(gl, carMesh);
@@ -990,12 +996,11 @@ function HourToSunlight(hour){
 /**
  * 
  * @param {number} hour 
- * @param {float} carZ
  * @returns {array} moon Position in an array of 3 elements X, Y, Z.
  */
 
-function moonPosition(hour, carZ){
-	var moonPos = [40.0, 0.0, 100];
+function moonPosition(hour){
+	var moonPos = [1000.0, 0.0, 200];
 	var angle = (hour - 6.0) * 15.0;
 	var r = 40;
 
@@ -1006,7 +1011,7 @@ function moonPosition(hour, carZ){
 		moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
 		moonPos[2] = carZ + 100;
 	//}
-	console.log(moonPos)
+	console.log(moonPos);
 	return moonPos;
 }
 
@@ -1119,6 +1124,7 @@ function prepare_object_rendering(object,light_mul){
 	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
 	gl.uniform1f(program.LampOn, LampOn.checked);
+	gl.uniform3f(program.moonPos,moonPos[0],moonPos[1],moonPos[2]);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 }
 
@@ -1183,7 +1189,7 @@ function drawScene() {
 		// console.log('X: ' + carX);
 		// console.log('Z: ' + carZ);
 		gLightDir = HourToSunlight(TimeOfDay.value);
-		moonPosition(TimeOfDay.value);
+		moonPos = moonPosition(TimeOfDay.value);
 		//console.log(gLightDir[3])
 		var currentTime = (new Date).getTime();
 		var deltaT;
