@@ -459,7 +459,7 @@ function main(){
 		program.NmatrixUniform = gl.getUniformLocation(program, "nMatrix");
 		program.textureUniform = gl.getUniformLocation(program, "u_texture");
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
-
+		// adding cusotm lights
 		program.LampOn = gl.getUniformLocation(program,"LampOn");
 //		program.ambFact = gl.getUniformLocation(program, "ambFact");
 		//OBJ.initMeshBuffers(gl, rock[0])
