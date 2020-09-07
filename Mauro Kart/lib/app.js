@@ -825,7 +825,20 @@ function dotProduct2D(firstVector, secondVector, angle) {
 	return lengthFirst * lengthSecond * Math.cos(get_angle(angle));
 }
 
-function dotProd(axisX, axisZ, pointX, pointZ, mainAxis) {
+/**
+ * Function to perform a the projection of a point over an axis
+ * 
+ * @param {number} axisX X parameter of the axis
+ * @param {number} axisZ Z parameter of the axis
+ * @param {number} pointX X parametere of the point
+ * @param {number} pointZ Z parameter of the point
+ * @param {number} mainAxis main axis to perform the dot product
+ * 
+ * @returns the computed value
+ */
+function project(axisX, axisZ, pointX, pointZ, mainAxis) {
+	// formula: (axisX * pointX + axisZ * pointZ) * mainAxis / (axisX^2 + axisZ^2)
+	
 	var den = Math.pow(axisX, 2) + Math.pow(axisZ, 2);
 	var num = axisX * pointX + axisZ * pointZ;
 
@@ -854,26 +867,27 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 	for (let i = 0; i < axes.length; i++) {
 		const axis = axes[i];
 
+		
 		var boatVertOnAxis = [
-			(dotProd(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[0]) * axis[0] + 
-				dotProd(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[1]) * axis[1])
+			(project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[0]) * axis[0] + 
+				project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[1]) * axis[1]),
+			(project(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[0]) * axis[0] +
+				project(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[1]) * axis[1]),
+			(project(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[0]) * axis[0] +
+				project(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[1]) * axis[1]),
+			(project(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[0]) * axis[0] +
+				project(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[1]) * axis[1])
 		];
 
 		var rockVertOnAxis = [
-			(dotProd(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[1]) * axis[1]),
-			(dotProd(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[0]) * axis[0] +
-				dotProd(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[1]) * axis[1])
+			(project(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[0]) * axis[0] +
+				project(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[1]) * axis[1]),
+			(project(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[0]) * axis[0] +
+				project(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[1]) * axis[1]),
+			(project(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[0]) * axis[0] +
+				project(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[1]) * axis[1]),
+			(project(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[0]) * axis[0] +
+				project(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[1]) * axis[1])
 		];
 
 		var bMax = boatVertOnAxis[0];
