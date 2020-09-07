@@ -489,8 +489,7 @@ function main(){
 		gLightDir = utils.multiplyMatrixVector(orientLight, gLightDir);
 		gLightDir = HourToSunlight(TimeOfDay.value);
 		gLightDir[0] = 0.0;
-		console.log(gLightDir);
-		initRock();
+		sinitRock();
 		// generateRockPositions(0, 200, rocks1);
 		// generateRockPositions(0, 200, rocks2);
 
@@ -954,30 +953,24 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 function HourToSunlight(hour){
 	var angle = (hour - 6.0) * 15.0;
 	var lightVec = [-1.0,0.0,0.0,1.0];
-	console.log(angle);
 	if(angle >=0.0 && angle <= 180){
 		var ZRotation = utils.MakeRotateZMatrix(-angle);
 		lightVec = utils.multiplyMatrixVector(ZRotation,lightVec);
-		console.log( 'day');
 	}
 	else{
 		if(angle >= 350.0){
 			lightVec[3] = 1.0 - utils.clamp((360.0 - angle)/10.0,0.0,0.7)
-			console.log( 'dawn');
 		}
 		else{
 			if(angle>180){
 				lightVec[0] = 1.0;
 				lightVec[3] = 1.0 - utils.clamp((angle - 180.0)/10.0,0.0,0.7)
-				console.log( 'sunset');
 			}
 			else{
 				lightVec[3] = 1.0 - utils.clamp((-angle)/10.0,0.0,0.7)
-				console.log( 'dawn 2');
 			}
 		}
 	}
-	console.log(lightVec[3])
 	return lightVec;
 }
 
