@@ -768,8 +768,8 @@ function buildRectangleBoat(centerX, centerZ, angle) {
 function buildRectangleRock(rockCenterX, rockCenterZ, rockAngle) {
 	var rectangleVerteces;
 
-	let rockLength = rockBaseDimensions[1] * rockResize;
-	let rockWidth = rockBaseDimensions[0] * rockResize;
+	let rockLength = rockBaseDimensions[1] * rockResize * 0.4;
+	let rockWidth = rockBaseDimensions[0] * rockResize * 0.4;
 
 	var tempX, tempZ, rotatedX, rotatedZ;
 	let sin = Math.sin(get_angle(rockAngle));
@@ -845,6 +845,23 @@ function project(axisX, axisZ, pointX, pointZ, mainAxis) {
 	return num * mainAxis / den;
 }
 
+
+/**
+ * Compute the normalization of the provided 2D vector
+ * 
+ * @param {number} x X coordinate of the vector
+ * @param {number} z Z coordinate of the vector
+ */
+function normalizeVector2D(x, z) {
+	var normalized = [];
+
+	var length = Math.sqrt(x * x + z * z);
+
+	normalized = [(x / length), (z / length)];
+
+	return normalized;
+}
+
 /**
  * Apply the SAT theorem to boat and the selected rock
  * 
@@ -865,8 +882,7 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 	];
 
 	for (let i = 0; i < axes.length; i++) {
-		const axis = axes[i];
-
+		const axis = normalizeVector2D(axes[i][0], axes[i][1]);
 		
 		var boatVertOnAxis = [
 			(project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[0]) * axis[0] + 
