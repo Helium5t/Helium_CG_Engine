@@ -26,6 +26,24 @@ var utils={
 
 		return hex;
 	},
+
+
+	/**
+	 * Limits the value in the range between min and max.
+	 * @param {number} value 
+	 * @param {number} min 
+	 * @param {number} max 
+	 */
+	clamp: function(value,min,max){
+		if(value > min){
+			if (value>max){
+				return max;
+			}
+			return value;
+		}
+		return min;
+
+	},
 	
 	
 	

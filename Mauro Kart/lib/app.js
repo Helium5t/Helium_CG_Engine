@@ -29,7 +29,6 @@ var projectionMatrix,
 	orientLight;
 	ambFactor = 1;
 
-
 //Parameters for Camera
 var cx = 4.5;
 var cy = 5.0;
@@ -488,7 +487,9 @@ function main(){
 
 		orientLight = utils.multiplyMatrices(utils.MakeRotateZMatrix(-45), utils.MakeRotateYMatrix(180));
 		gLightDir = utils.multiplyMatrixVector(orientLight, gLightDir);
-
+		gLightDir = HourToSunlight(TimeOfDay.value);
+		gLightDir[0] = 0.0;
+		console.log(gLightDir);
 		initRock();
 		// generateRockPositions(0, 200, rocks1);
 		// generateRockPositions(0, 200, rocks2);
@@ -513,7 +514,7 @@ var sBT = 1.0;
 var mBT = 3.0;
 var BTur = 5.0;
 var BTdr = 5.5;
-var Tfric = Math.log(0.0001);
+var Tfric = Math.log(0.000001);
 var sAS = 0.1;	// Not used yet
 var mAS = 108.0;
 var ASur = 1.0;	// Not used yet
@@ -591,7 +592,7 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rocksArray[i].indexBuffer);		
 
 		gl.uniform1i(program.textureUniform, 7);
-		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], ambFactor);
+		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], gLightDir[3]);
 
 
 		var alignMatrix = utils.MakeScaleMatrix(rockResize);
@@ -916,6 +917,41 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 	return collide;
 }
 
+/**
+ * 
+ * @param {time} hour 
+ */
+function HourToSunlight(hour){
+	var angle = (hour - 6.0) * 15.0;
+	var lightVec = [-1.0,0.0,0.0,1.0];
+	console.log(angle);
+	if(angle >=0.0 && angle <= 180){
+		var ZRotation = utils.MakeRotateZMatrix(-angle);
+		lightVec = utils.multiplyMatrixVector(ZRotation,lightVec);
+		console.log( 'day');
+	}
+	else{
+		if(angle >= 350.0){
+			lightVec[3] = 1.0 - utils.clamp((360.0 - angle)/10.0,0.0,0.7)
+			console.log( 'dawn');
+		}
+		else{
+			if(angle>180){
+				lightVec[0] = 1.0;
+				lightVec[3] = 1.0 - utils.clamp((angle - 180.0)/10.0,0.0,0.7)
+				console.log( 'sunset');
+			}
+			else{
+				lightVec[3] = 1.0 - utils.clamp((-angle)/10.0,0.0,0.7)
+				console.log( 'dawn 2');
+			}
+		}
+	}
+	console.log(lightVec[3])
+	return lightVec;
+}
+
+
 function checkBoundsMatrix(x, z) {
 	if (x >= 0 && x < 200 && z >= 0 && z < 200) {
 		return true;
@@ -1008,6 +1044,12 @@ function checkDeath(posX, posZ, angle) {
 	}
 }
 
+
+/**
+ * Sets up the common pre-rendering calls for the passed object
+ * @param {OBJ} object the object to be rendered
+ * @param {number} light_mul a value from 0.0 to 1.0 determining how much ambient light to add
+ */
 function prepare_object_rendering(object,light_mul){
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.vertexBuffer);
 	gl.vertexAttribPointer(program.vertexPositionAttribute, object.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -1019,7 +1061,10 @@ function prepare_object_rendering(object,light_mul){
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 }
 
-
+/**
+ * Generates the track elements on which the boat rides.
+ * It is also responsible for moving the track in order not to go out of bounds
+ */
 function generateTrack(){
 	// draws the skybox
 
@@ -1028,7 +1073,7 @@ function generateTrack(){
 	}
 
 	for(var i = 0; i<3;i++){
-		prepare_object_rendering(skybox,ambFactor);
+		prepare_object_rendering(skybox,gLightDir[3]);
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale)));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
@@ -1076,7 +1121,8 @@ function drawScene() {
 		// compute time interval
 		// console.log('X: ' + carX);
 		// console.log('Z: ' + carZ);
-
+		gLightDir = HourToSunlight(TimeOfDay.value);
+		//console.log(gLightDir[3])
 		var currentTime = (new Date).getTime();
 		var deltaT;
 		if (lastUpdateTime) {
@@ -1270,7 +1316,7 @@ function drawScene() {
 		//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 		//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
 		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
-		prepare_object_rendering(skyboxFront, ambFactor);
+		prepare_object_rendering(skyboxFront, gLightDir[3]);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1280,7 +1326,7 @@ function drawScene() {
 
 		// draws the skybox back
 
-		prepare_object_rendering(skyboxBack, ambFactor);
+		prepare_object_rendering(skyboxBack, gLightDir[3]);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1290,7 +1336,7 @@ function drawScene() {
 
 		// draws the skybox right of ship (left world)
 
-		prepare_object_rendering(skyboxLeft, ambFactor);
+		prepare_object_rendering(skyboxLeft, gLightDir[3]);
 		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1300,7 +1346,7 @@ function drawScene() {
 
 		// draws the skybox left of ship (right world)
 
-		prepare_object_rendering(skyboxRight, ambFactor);
+		prepare_object_rendering(skyboxRight, gLightDir[3]);
 		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1309,7 +1355,7 @@ function drawScene() {
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 		// draws the skybox top
-		prepare_object_rendering(skyboxTop, ambFactor);
+		prepare_object_rendering(skyboxTop, gLightDir[3]);
 		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1321,7 +1367,7 @@ function drawScene() {
 		// draws the skybox bottom
 
 
-		prepare_object_rendering(skyboxBottom, ambFactor)
+		prepare_object_rendering(skyboxBottom, gLightDir[3])
 		//translate the image of y: -230, scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1360,17 +1406,17 @@ function drawScene() {
 		//generateRock();
 
 
-		// draws the Ship
-		prepare_object_rendering(carMesh, ambFactor);
+		// draws the ship
+		prepare_object_rendering(carMesh, gLightDir[3]);
 
 
-		// Aligning the Ship
+		// Aligning the ship
 		var alignMatrix = utils.MakeScaleMatrix(0.01);
 		alignMatrix = utils.multiplyMatrices(alignMatrix, utils.MakeRotateYMatrix(90));
 
 		WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix), alignMatrix);
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(utils.multiplyMatrices(worldMatrix,alignMatrix)));
 		gl.uniform1i(program.textureUniform, 0);
 		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 		window.requestAnimationFrame(drawScene);
