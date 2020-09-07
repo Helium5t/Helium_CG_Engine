@@ -29,6 +29,7 @@ var projectionMatrix,
 	orientLight;
 	ambFactor = 1;
 
+
 //Parameters for Camera
 var cx = 4.5;
 var cy = 5.0;
@@ -45,6 +46,10 @@ var correctionFactor =5;
 var correctionTime = 0;
 var newSector = false;
 var lookRadius = 10.0;
+var LampPos = [carX,carY+10,carZ];
+var	LampDir = [0.0,0.0,1.0];
+
+
 
 
 var keys = [];
@@ -267,6 +272,7 @@ in vec3 fs_pos;
 in vec3 fs_norm;
 in vec2 fs_uv;
 
+uniform float LampOn;
 uniform sampler2D u_texture;
 uniform vec4 lightDir;
 //uniform float ambFact;
@@ -453,6 +459,8 @@ function main(){
 		program.NmatrixUniform = gl.getUniformLocation(program, "nMatrix");
 		program.textureUniform = gl.getUniformLocation(program, "u_texture");
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
+
+		program.LampOn = gl.getUniformLocation(program,"LampOn");
 //		program.ambFact = gl.getUniformLocation(program, "ambFact");
 		//OBJ.initMeshBuffers(gl, rock[0])
 		OBJ.initMeshBuffers(gl, carMesh);
@@ -488,8 +496,6 @@ function main(){
 		orientLight = utils.multiplyMatrices(utils.MakeRotateZMatrix(-45), utils.MakeRotateYMatrix(180));
 		gLightDir = utils.multiplyMatrixVector(orientLight, gLightDir);
 		gLightDir = HourToSunlight(TimeOfDay.value);
-		gLightDir[0] = 0.0;
-		console.log(gLightDir);
 		initRock();
 		// generateRockPositions(0, 200, rocks1);
 		// generateRockPositions(0, 200, rocks2);
@@ -955,29 +961,25 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 function HourToSunlight(hour){
 	var angle = (hour - 6.0) * 15.0;
 	var lightVec = [-1.0,0.0,0.0,1.0];
-	console.log(angle);
 	if(angle >=0.0 && angle <= 180){
 		var ZRotation = utils.MakeRotateZMatrix(-angle);
 		lightVec = utils.multiplyMatrixVector(ZRotation,lightVec);
-		console.log( 'day');
 	}
 	else{
 		if(angle >= 350.0){
 			lightVec[3] = 1.0 - utils.clamp((360.0 - angle)/10.0,0.0,0.7)
-			console.log( 'dawn');
 		}
 		else{
 			if(angle>180){
 				lightVec[0] = 1.0;
 				lightVec[3] = 1.0 - utils.clamp((angle - 180.0)/10.0,0.0,0.7)
-				console.log( 'sunset');
 			}
 			else{
 				lightVec[3] = 1.0 - utils.clamp((-angle)/10.0,0.0,0.7)
-				console.log( 'dawn 2');
 			}
 		}
 	}
+
 	console.log(lightVec)
 	return lightVec;
 }
@@ -1116,6 +1118,7 @@ function prepare_object_rendering(object,light_mul){
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.normalBuffer);
 	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
+	gl.uniform1f(program.LampOn, LampOn.checked);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 }
 
