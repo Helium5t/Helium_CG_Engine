@@ -2,8 +2,15 @@
 [X] Skybox : fronte, destra, sinistra
 [X] Correzione movimento barca
 [X] Correzione Texture (track)
-[ ] Aggiornare HTMl
+[X] Aggiornare HTMl
 [X] Nave sul bordo (Fixare limiti mappa)
 [X] Loading Rocce
-[ ] Shader
-[/] Interazione Web
+[ ] Shader:
+    [ ] Posizione Luna
+    [ ] Decay Factor Luna
+    [ ] Posizione Faro
+    [ ] Direzione Faro
+    [ ] ConeIn
+    [ ] ConeOut
+    [ ] Colore Faro
+[X] Interazione Web
