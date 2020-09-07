@@ -29,6 +29,11 @@ var projectionMatrix,
 	moonPos,
 	orientLight;
 	ambFactor = 1;
+	LampColor = [0,0,0,0];
+	LampConeIn = 30;
+	LampConeOut = 30;
+	LampTarget = 20;
+	LampDecay = 1.2;
 
 
 //Parameters for Camera
@@ -252,16 +257,24 @@ layout(location = UV_LOCATION) in vec2 in_uv;
 
 uniform mat4 pMatrix;
 uniform mat4 nMatrix;
+uniform vec3 moonPos;
+uniform vec3 LampPos;
 
 out vec3 fs_pos;
 out vec3 fs_norm;
 out vec2 fs_uv;
+out vec3 moonDir;
+out vec3 ToLampDir;
+out float LampDist;
 
 void main() {
 	fs_pos = in_pos;
 	fs_norm = (nMatrix * vec4(in_norm, 0.0)).xyz;
 	fs_uv = vec2(in_uv.x, 1.0-in_uv.y);
-	
+	moonDir = normalize(moonPos-fs_pos);
+	ToLampDir = normalize(LampPos - fs_pos);
+	LampDist = distance(in_pos,LampPos);
+
 	gl_Position = pMatrix * vec4(in_pos, 1.0);
 }`;
 
@@ -273,22 +286,31 @@ in vec3 fs_pos;
 in vec3 fs_norm;
 in vec2 fs_uv;
 
+in vec3 moonDir;
+in float LampDist;
+in vec3 ToLampDir;
+
 uniform float LampOn;
 uniform sampler2D u_texture;
 uniform vec4 lightDir;
-uniform vec3 moonPos;
+uniform vec4 LampCol;
+uniform vec3 LampDir;
+uniform float LConeIn;
+uniform float LConeOut;
+uniform float LampTarget;
+uniform float LampDecay;
 //uniform float ambFact;
 
 
 out vec4 color;
 
 void main() {
-	vec3 moonLightDir = normalize(moonPos - fs_pos);
-	float dimMoonLight  = clamp(dot(normalize(fs_norm), moonLightDir),0.0,1.0);
+	float MoonFact  = clamp(dot(normalize(fs_norm), moonDir),0.0,1.0);
 	vec4 texcol = texture(u_texture, fs_uv);
+	vec4 LampColorFinal = LampCol * pow( LampTarget / LampDist,LampDecay) * clamp( (dot(ToLampDir,LampDir) - cos(radians(LConeOut))) / cos(radians(LConeIn * LConeOut)),0.0,1.0);
 	float ambFact = lightDir.w;
 	float dimFact = clamp(ambFact,0.0,1.0)* clamp(dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
-	color = vec4(texcol.rgb * (dimMoonLight+dimFact), texcol.a);
+	color = vec4(texcol.rgb * (MoonFact+dimFact)  + (LampColorFinal.xyz)*0.2, texcol.a);
 }`;
 
 // event handler
@@ -466,6 +488,13 @@ function main(){
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
 		// adding cusotm lights
 		program.LampOn = gl.getUniformLocation(program,"LampOn");
+		program.LampPos = gl.getUniformLocation(program,"LampPos");
+		program.LampDir = gl.getUniformLocation(program,"LampDir");
+		program.LampColor = gl.getUniformLocation(program,"LampCol");
+		program.LampConeIn = gl.getUniformLocation(program,"LConeIn");
+		program.LampConeOut = gl.getUniformLocation(program,"LConeOut");
+		program.LampTarget = gl.getUniformLocation(program,"LampTarget");
+		program.LampDecay = gl.getUniformLocation(program,"LampDecay");
 		program.moonPos = gl.getUniformLocation(program,"moonPos");
 //		program.ambFact = gl.getUniformLocation(program, "ambFact");
 		//OBJ.initMeshBuffers(gl, rock[0])
@@ -986,8 +1015,16 @@ function HourToSunlight(hour){
 		}
 	}
 
-	console.log(lightVec)
+//	console.log(lightVec)
 	return lightVec;
+}
+
+function parseColor(hexstring){
+	var fullhex = hexstring.substring(0,7);
+	R = parseInt(fullhex.substring(0,2),16)/255;
+	G = parseInt(fullhex.substring(2,4),16)/255;
+	B = parseInt(fullhex.substring(4,6),16)/255;
+	return [R,G,B]
 }
 
 
@@ -1004,14 +1041,14 @@ function moonPosition(hour){
 	var angle = (hour - 6.0) * 15.0;
 	var r = 40;
 
-	console.log(angle);
+	//console.log(angle);
 
 	//if(angle < 0.0 || angle > 180){
 		moonPos[0] = r * Math.cos(angle * Math.PI / 180);
 		moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
 		moonPos[2] = carZ + 100;
 	//}
-	console.log(moonPos);
+	//console.log(moonPos);
 	return moonPos;
 }
 
@@ -1124,6 +1161,13 @@ function prepare_object_rendering(object,light_mul){
 	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
 	gl.uniform1f(program.LampOn, LampOn.checked);
+	console.log(LampColor);
+	gl.uniform4f(program.LampColor,LampColor[0],LampColor[1],LampColor[2],LampColor[3]);
+	gl.uniform1f(program.LampConeIn,LampConeIn);
+	gl.uniform1f(program.LampConeOut,LampConeOut);
+	gl.uniform1f(program.LampTarget,LampTarget);
+	gl.uniform1f(program.LampDecay, LampDecay);
+	gl.uniform3f(program.LampPos,LampPos[0],LampPos[1],LampPos[2]);
 	gl.uniform3f(program.moonPos,moonPos[0],moonPos[1],moonPos[2]);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 }
@@ -1190,6 +1234,9 @@ function drawScene() {
 		// console.log('Z: ' + carZ);
 		gLightDir = HourToSunlight(TimeOfDay.value);
 		moonPos = moonPosition(TimeOfDay.value);
+		LampColor = parseColor(LampHex.value.substring(1,7));
+		LampColor[3] = 1.0;
+		LampPos = [carX,carY+10,carZ]
 		//console.log(gLightDir[3])
 		var currentTime = (new Date).getTime();
 		var deltaT;
