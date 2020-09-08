@@ -30,10 +30,10 @@ var projectionMatrix,
 	orientLight;
 	ambFactor = 1;
 	LampColor = [0,0,0,0];
-	LampConeIn = 30;
-	LampConeOut = 30;
-	LampTarget = 20;
-	LampDecay = 1.2;
+	LampConeIn = 80;
+	LampConeOut = 10;
+	LampTarget = 10;
+	LampDecay = 0;
 
 
 //Parameters for Camera
@@ -52,8 +52,8 @@ var correctionFactor =5;
 var correctionTime = 0;
 var newSector = false;
 var lookRadius = 10.0;
-var LampPos = [carX,carY+10,carZ];
-var	LampDir = [0.0,0.0,1.0];
+var LampPos = [carX,carY+100,carZ+20];
+var	LampDir = utils.normalizeVector3([0.0,1.0,-1.0]);
 
 
 
@@ -65,9 +65,9 @@ var vz = 0.0;
 var rvy = 0.0;
 
 var keyFunctionDown = function(e) {
-	// console.log('X:' + carX);
+	console.log('X:' + carX);
 	// console.log('Y:' + carY);
-	// console.log('Z:' + carZ);
+	 console.log('Z:' + carZ);
   if(!keys[e.keyCode]) {
   	keys[e.keyCode] = true;
 	switch(e.keyCode) {
@@ -273,7 +273,7 @@ void main() {
 	fs_uv = vec2(in_uv.x, 1.0-in_uv.y);
 	moonDir = normalize(moonPos-fs_pos);
 	ToLampDir = normalize(LampPos - fs_pos);
-	LampDist = distance(in_pos,LampPos);
+	LampDist = distance(LampPos,fs_pos);
 
 	gl_Position = pMatrix * vec4(in_pos, 1.0);
 }`;
@@ -307,10 +307,11 @@ out vec4 color;
 void main() {
 	float MoonFact  = clamp(dot(normalize(fs_norm), moonDir),0.0,1.0);
 	vec4 texcol = texture(u_texture, fs_uv);
-	vec4 LampColorFinal = LampCol * pow( LampTarget / LampDist,LampDecay) * clamp( (dot(ToLampDir,LampDir) - cos(radians(LConeOut))) / cos(radians(LConeIn * LConeOut)),0.0,1.0);
-	float ambFact = lightDir.w;
-	float dimFact = clamp(ambFact,0.0,1.0)* clamp(dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
-	color = vec4(texcol.rgb * (MoonFact+dimFact)  + (LampColorFinal.xyz)*0.2, texcol.a);
+	vec4 LampColorFinal = LampCol * pow( LampTarget / LampDist,LampDecay) * clamp( ( dot(ToLampDir,LampDir) - cos(radians(LConeOut)) ) / cos(radians(LConeIn * LConeOut)),0.0,1.0);
+	float dimFact = clamp(lightDir.w * dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
+	vec4 LampDiffuse = vec4(LampColorFinal.xyz * clamp(dot(normalize(fs_norm),LampDir),0.0,1.0) * texcol.xyz,1.0);
+	vec4 DayDiffuse = vec4(clamp(texcol.rgb * dimFact,0.0,1.0),1);
+	color = vec4(clamp((DayDiffuse.xyz/10.0) + LampDiffuse.xyz,0.0,1.0),1.0) ;
 }`;
 
 // event handler
@@ -644,7 +645,7 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),alignMatrix));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
 
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.MakeRotateYMatrix(rockRotationsArray[i])));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.MakeRotateYMatrix(-rockRotationsArray[i]));
 		gl.drawElements(gl.TRIANGLES, rocksArray[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
 	}
@@ -997,7 +998,7 @@ function HourToSunlight(hour){
 	var angle = (hour - 6.0) * 15.0;
 	var lightVec = [-1.0,0.0,0.0,1.0];
 	if(angle >=0.0 && angle <= 180){
-		var ZRotation = utils.MakeRotateZMatrix(-angle);
+		var ZRotation = utils.MakeRotateZMatrix(180+angle);
 		lightVec = utils.multiplyMatrixVector(ZRotation,lightVec);
 	}
 	else{
@@ -1006,10 +1007,11 @@ function HourToSunlight(hour){
 		}
 		else{
 			if(angle>180){
-				lightVec[0] = 1.0;
+				lightVec[0] = -1.0;
 				lightVec[3] = 1.0 - utils.clamp((angle - 180.0)/10.0,0.0,0.7)
 			}
 			else{
+				lightVec[0] = 1.0;
 				lightVec[3] = 1.0 - utils.clamp((-angle)/10.0,0.0,0.7)
 			}
 		}
@@ -1136,7 +1138,7 @@ function checkDeath(posX, posZ, angle) {
 
 		var collision = separatingAxisTheorem(boatRectangle, buildRectangleRock(rockX, rockZ, rockAngle));
 
-		if (collision) {
+		if (collision ) {
 			// collision detected, launch the error function
 			// console.log("COLLISION DETECTED");
 			errDetected = true;
@@ -1161,9 +1163,9 @@ function prepare_object_rendering(object,light_mul){
 	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
 	gl.uniform1f(program.LampOn, LampOn.checked);
-	console.log(LampColor);
 	gl.uniform4f(program.LampColor,LampColor[0],LampColor[1],LampColor[2],LampColor[3]);
 	gl.uniform1f(program.LampConeIn,LampConeIn);
+	gl.uniform3f(program.LampDir,LampDir[0],LampDir[1],LampDir[2]);
 	gl.uniform1f(program.LampConeOut,LampConeOut);
 	gl.uniform1f(program.LampTarget,LampTarget);
 	gl.uniform1f(program.LampDecay, LampDecay);
@@ -1414,7 +1416,7 @@ function drawScene() {
 			// delta e' negativa se avanzo, positiva se indietreggio
 		}
 
-		checkDeath(carX, carZ, carAngle);
+		//checkDeath(carX, carZ, carAngle);
 
 		// draws the track
 		//gl.uniform1i(program.textureUniform, 1);
