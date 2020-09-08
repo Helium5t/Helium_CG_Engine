@@ -14,6 +14,7 @@
 	<script src="lib/quaternion.min.js"></script>
 	<script src="lib/utils.js"></script>
 	<script src="lib/app.js"></script>
+	<script src="lib/assets/music/music.js"></script>
 </head>
 
 <body style="background-color: white;" onLoad="main();">
@@ -47,12 +48,21 @@
 					Boat light color
 				</div>
 			</div>
+			<div>
+				<input type="checkbox" name="music" id="music-start" onchange="letTheMusicFlow(this)">
+				<label for="music-start">Enable Music</label>
+				<audio id="song-1" preload class="songs" src=".\lib\assets\music\1.mp3"></audio>
+
+				<audio id="song-2" preload class="songs" src=".\lib\assets\music\2.mp3"></audio>
+
+				<audio id="song-3" preload class="songs" src=".\lib\assets\music\3.mp3"></audio>
+
+				<audio id="song-4" preload class="songs" src=".\lib\assets\music\4.mp3"></audio>
+
+				<audio id="song-4" preload class="songs" src=".\lib\assets\music\5.mp3"></audio>
+			</div>
 		</div>
 	</div>
-
-	<!-- 
-		TOCCO FINALE SAREBBERO GLI SHANTY DI BLACK FLAG COME SOTTOFONDO
-	 -->
 
 
 	<!-- <center>
