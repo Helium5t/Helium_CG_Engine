@@ -1,5 +1,5 @@
 var audioArrayElements = document.getElementsByClassName("songs");
-var lastPlayed = 0;
+var lastPlayed;
 var audioArraySrc = [];
 
 /*
@@ -19,6 +19,8 @@ jQuery(document).ready(function () {
         
         audioArraySrc[index] = element.getAttribute("src");
     }
+
+    lastPlayed = Math.floor(Math.random() * audioArrayElements.length);
 })
 
 /**
@@ -29,6 +31,7 @@ jQuery(document).ready(function () {
 function letTheMusicFlow(e) {
     if (e.checked) {
         restoreSrc();
+        audioArrayElements[lastPlayed].volume = 0.5;
         audioArrayElements[lastPlayed].play();
 
         for (let j = 0; j < audioArrayElements.length; j++) {
@@ -38,13 +41,15 @@ function letTheMusicFlow(e) {
                 var currentSong = e.target;
                 var next = $(currentSong).nextAll('audio');
 
-                lastPlayed++;
+                lastPlayed = (lastPlayed + 1) % audioArrayElements.length;
 
                 if(next.length) {
+                    $(next[0]).volume = 0.5;
                     $(next[0]).trigger('play');
                 } else {
                     // $(next[0]).trigger('play');
                     lastPlayed = 0;
+                    audioArrayElements[lastPlayed].volume = 0.5;
                     audioArrayElements[lastPlayed].play();
                 }
             })
