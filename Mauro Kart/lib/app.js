@@ -94,7 +94,7 @@ var keyFunctionDown = function(e) {
 
 function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
-  }
+}
 
 var keyFunctionUp = async function (e) {
 	
@@ -581,7 +581,7 @@ var preVz = 0;
 function generateRockPositionOnMatrix(lowerLimit, upperLimit, numElements){
 	let rockPos = [];
 	for(i = 0; i<numElements;i++){
-		var positionX = Math.floor(Math.random() * 200) - 100;
+		var positionX = Math.floor(Math.random() * 199) - 99; // between [-99 and 100]
 		var positionZ = lowerLimit + Math.floor(Math.random() * (upperLimit - lowerLimit));
 		rockPos[i] = [positionX, positionZ];
 	}
@@ -603,7 +603,7 @@ function generateRockRotationOnMatrix(numElements, destMatrix, rocksPosition){
 		rockRot[i] = Math.floor(Math.random() * 360);
 		let rock = rocksPosition[i];
 
-		destMatrix[rock[0] + 100][rock[1] % 200] = {
+		destMatrix[100 - rock[0]][rock[1] % 200] = {
 			"X": rock[0],
 			"Z": rock[1],
 			"angle": rockRot[i]
@@ -652,12 +652,12 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 }
 
 /** Generate meshes for the rocks */
-function initRocks(){
-	for(i=0; i<numRocks;i++){
-		rock1[i] = new OBJ.Mesh(rockObjStr)
-		OBJ.initMeshBuffers(gl, rock1[i])
-		rock2[i] = new OBJ.Mesh(rockObjStr)
-		OBJ.initMeshBuffers(gl, rock2[i])
+function initRocks() {
+	for (i = 0; i < numRocks; i++) {
+		rock1[i] = new OBJ.Mesh(rockObjStr);
+		OBJ.initMeshBuffers(gl, rock1[i]);
+		rock2[i] = new OBJ.Mesh(rockObjStr);
+		OBJ.initMeshBuffers(gl, rock2[i]);
 	}
 }
 
@@ -744,8 +744,68 @@ function getHundreds(number) {
 	return Math.trunc(number/100);
 }
 
+/**
+ * Perform the dot product of two segment in 2D-space
+ * 
+ * @param {array} firstVector 2 endpoints of the first segment
+ * @param {array} secondVector 2 endpoints of the second segment
+ * 
+ * @returns the dot product between firstVector and secondVector
+ */
+function dotProduct2D(firstVector, secondVector) {
+	let firstX = firstVector[0];
+	let firstZ = firstVector[1];
+	let secondX = secondVector[0];
+	let secondZ = secondVector[1];
+
+	return (firstX * secondX + firstZ * secondZ);
+}
+
+/**
+ * Function to perform a the projection of a point over an axis
+ * 
+ * @param {number} axisX X parameter of the axis
+ * @param {number} axisZ Z parameter of the axis
+ * @param {number} pointX X parametere of the point
+ * @param {number} pointZ Z parameter of the point
+ * @param {number} mainAxis main axis to perform the dot product
+ * 
+ * @returns the computed value
+ */
+function project(axisX, axisZ, pointX, pointZ, mainAxis) {
+	// formula: (axisX * pointX + axisZ * pointZ) * mainAxis / (axisX^2 + axisZ^2)
+	
+	var den = Math.pow(axisX, 2) + Math.pow(axisZ, 2);
+	var num = axisX * pointX + axisZ * pointZ;
+
+	return num * mainAxis / den;
+}
+
+
+/**
+ * Compute the normalization of the provided 2D vector
+ * 
+ * @param {number} x X coordinate of the vector
+ * @param {number} z Z coordinate of the vector
+ */
+function normalizeVector2D(x, z) {
+	var normalized = [];
+
+	var length = Math.sqrt(x * x + z * z);
+
+	normalized = [(x / length), (z / length)];
+
+	return normalized;
+}
+
+/*
+#########################################
+##             COLLISIONS              ##
+#########################################
+*/
+
 /** dimensions X and Z of the rock model without modifications */
-var rockBaseDimensions = [10.029, 6.75];
+var rockBaseDimensions = [10.029, 5.886];
 
 /** dimensions X and Z of the boat model without modifications */
 var boatBaseDimensions = [1137.463, 240.86];
@@ -763,7 +823,14 @@ function buildRectangleBoat(centerX, centerZ, angle) {
 
 	var rectangleVerteces;
 	var tempX, tempZ, rotatedX, rotatedZ;
-	let sin = Math.sin(get_angle(angle));
+	let sin;
+
+	if (floatComparison(angle, 0.0, "<")) {
+		sin = Math.sin(get_angle(360.0 + angle));
+	} else {
+		sin = Math.sin(get_angle(angle));
+	}
+
 	let cos = Math.cos(get_angle(angle));
 
 	let topLeftCorner;
@@ -810,8 +877,10 @@ function buildRectangleBoat(centerX, centerZ, angle) {
 function buildRectangleRock(rockCenterX, rockCenterZ, rockAngle) {
 	var rectangleVerteces;
 
-	let rockLength = rockBaseDimensions[1] * rockResize * 0.4;
-	let rockWidth = rockBaseDimensions[0] * rockResize * 0.4;
+	let correctionCoefficient = 0.8;
+
+	let rockLength = rockBaseDimensions[1] * rockResize * correctionCoefficient;
+	let rockWidth = rockBaseDimensions[0] * rockResize * correctionCoefficient;
 
 	var tempX, tempZ, rotatedX, rotatedZ;
 	let sin = Math.sin(get_angle(rockAngle));
@@ -852,59 +921,6 @@ function buildRectangleRock(rockCenterX, rockCenterZ, rockAngle) {
 }
 
 /**
- * Perform the dot product of two segment in 2D-space
- * 
- * @param {array} firstVector 2 endpoints of the first segment
- * @param {array} secondVector 2 endpoints of the second segment
- * @param {number} angle angle between firstVector and secondVector
- * 
- * @returns the dot product between firstVector and secondVector
- */
-function dotProduct2D(firstVector, secondVector, angle) {
-	var lengthFirst = distance(firstVector[0][0], firstVector[0][1], firstVector[1][0], firstVector[1][1]);
-	var lengthSecond = distance(secondVector[0][0], secondVector[0][1], secondVector[1][0], secondVector[1][1]);
-
-	return lengthFirst * lengthSecond * Math.cos(get_angle(angle));
-}
-
-/**
- * Function to perform a the projection of a point over an axis
- * 
- * @param {number} axisX X parameter of the axis
- * @param {number} axisZ Z parameter of the axis
- * @param {number} pointX X parametere of the point
- * @param {number} pointZ Z parameter of the point
- * @param {number} mainAxis main axis to perform the dot product
- * 
- * @returns the computed value
- */
-function project(axisX, axisZ, pointX, pointZ, mainAxis) {
-	// formula: (axisX * pointX + axisZ * pointZ) * mainAxis / (axisX^2 + axisZ^2)
-	
-	var den = Math.pow(axisX, 2) + Math.pow(axisZ, 2);
-	var num = axisX * pointX + axisZ * pointZ;
-
-	return num * mainAxis / den;
-}
-
-
-/**
- * Compute the normalization of the provided 2D vector
- * 
- * @param {number} x X coordinate of the vector
- * @param {number} z Z coordinate of the vector
- */
-function normalizeVector2D(x, z) {
-	var normalized = [];
-
-	var length = Math.sqrt(x * x + z * z);
-
-	normalized = [(x / length), (z / length)];
-
-	return normalized;
-}
-
-/**
  * Apply the SAT theorem to boat and the selected rock
  * 
  * @param {array} boatVertices list of verteces of the rectangle of the boat
@@ -926,26 +942,40 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 	for (let i = 0; i < axes.length; i++) {
 		const axis = normalizeVector2D(axes[i][0], axes[i][1]);
 		
+		// var boatVertOnAxis = [
+		// 	(project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[0]) * axis[0] + 
+		// 		project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[1]) * axis[1]),
+		// 	(project(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[0]) * axis[0] +
+		// 		project(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[1]) * axis[1]),
+		// 	(project(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[0]) * axis[0] +
+		// 		project(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[1]) * axis[1]),
+		// 	(project(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[0]) * axis[0] +
+		// 		project(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[1]) * axis[1])
+		// ];
+
+		// var rockVertOnAxis = [
+		// 	(project(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[0]) * axis[0] +
+		// 		project(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[1]) * axis[1]),
+		// 	(project(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[0]) * axis[0] +
+		// 		project(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[1]) * axis[1]),
+		// 	(project(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[0]) * axis[0] +
+		// 		project(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[1]) * axis[1]),
+		// 	(project(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[0]) * axis[0] +
+		// 		project(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[1]) * axis[1])
+		// ];
+
 		var boatVertOnAxis = [
-			(project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[0]) * axis[0] + 
-				project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[1]) * axis[1]),
-			(project(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[0]) * axis[0] +
-				project(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[1]) * axis[1]),
-			(project(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[0]) * axis[0] +
-				project(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[1]) * axis[1]),
-			(project(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[0]) * axis[0] +
-				project(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[1]) * axis[1])
+			(dotProduct2D(axis, boatVertices[0])),
+			(dotProduct2D(axis, boatVertices[1])),
+			(dotProduct2D(axis, boatVertices[2])),
+			(dotProduct2D(axis, boatVertices[3]))
 		];
 
 		var rockVertOnAxis = [
-			(project(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[0]) * axis[0] +
-				project(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[1]) * axis[1]),
-			(project(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[0]) * axis[0] +
-				project(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[1]) * axis[1]),
-			(project(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[0]) * axis[0] +
-				project(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[1]) * axis[1]),
-			(project(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[0]) * axis[0] +
-				project(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[1]) * axis[1])
+			(dotProduct2D(axis, rockVertices[0])),
+			(dotProduct2D(axis, rockVertices[1])),
+			(dotProduct2D(axis, rockVertices[2])),
+			(dotProduct2D(axis, rockVertices[3]))
 		];
 
 		var bMax = boatVertOnAxis[0];
@@ -978,7 +1008,9 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 		// if two object are separated along one axis, then they are not colliding
 		// if two object are separated along one axis, then this method can saftly conclude computation,
 		// returning the requested value
-		var separated = (floatComparison(bMax, rMin, "<")) || (floatComparison(rMax, bMin, "<"));
+		var separated = !( floatComparison(rMax, bMin, ">") && floatComparison(rMin, bMax, "<"));
+		
+		//(floatComparison(bMax, rMin, "<")) || (floatComparison(rMax, bMin, "<"));
 
 		if (separated) {
 			return notCollide;
@@ -989,69 +1021,13 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 }
 
 /**
+ * Perform a bound check in rockCol1 and rockCol2 matrices
  * 
- * @param {number} hour 
- * @returns {array} light vector
- */
-function HourToSunlight(hour){
-	var angle = (hour - 6.0) * 15.0;
-	var lightVec = [-1.0,0.0,0.0,1.0];
-	if(angle >=0.0 && angle <= 180){
-		var ZRotation = utils.MakeRotateZMatrix(-angle);
-		lightVec = utils.multiplyMatrixVector(ZRotation,lightVec);
-	}
-	else{
-		if(angle >= 350.0){
-			lightVec[3] = 1.0 - utils.clamp((360.0 - angle)/10.0,0.0,0.7)
-		}
-		else{
-			if(angle>180){
-				lightVec[0] = 1.0;
-				lightVec[3] = 1.0 - utils.clamp((angle - 180.0)/10.0,0.0,0.7)
-			}
-			else{
-				lightVec[3] = 1.0 - utils.clamp((-angle)/10.0,0.0,0.7)
-			}
-		}
-	}
-
-//	console.log(lightVec)
-	return lightVec;
-}
-
-function parseColor(hexstring){
-	var fullhex = hexstring.substring(0,7);
-	R = parseInt(fullhex.substring(0,2),16)/255;
-	G = parseInt(fullhex.substring(2,4),16)/255;
-	B = parseInt(fullhex.substring(4,6),16)/255;
-	return [R,G,B]
-}
-
-
-
-
-/**
+ * @param {number} x X value to check
+ * @param {number} z Z value to check
  * 
- * @param {number} hour 
- * @returns {array} moon Position in an array of 3 elements X, Y, Z.
+ * @returns true if the point is in-bound, false otherwise
  */
-
-function moonPosition(hour){
-	var moonPos = [1000.0, 0.0, 200];
-	var angle = (hour - 6.0) * 15.0;
-	var r = 40;
-
-	//console.log(angle);
-
-	//if(angle < 0.0 || angle > 180){
-		moonPos[0] = r * Math.cos(angle * Math.PI / 180);
-		moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
-		moonPos[2] = carZ + 100;
-	//}
-	//console.log(moonPos);
-	return moonPos;
-}
-
 function checkBoundsMatrix(x, z) {
 	if (x >= 0 && x < 200 && z >= 0 && z < 200) {
 		return true;
@@ -1071,7 +1047,7 @@ function checkBoundsMatrix(x, z) {
 function gatherRocks(boatX, boatZ) {
 	var roundedZ = Math.round(boatZ);
 
-	var offsettedX = Math.round(boatX) + 100;
+	var offsettedX = 100 - Math.round(boatX);
 	var offsettedZ = roundedZ % 200;
 
 	var rockSize = Math.round(rockBaseDimensions[0] * rockResize);
@@ -1086,13 +1062,22 @@ function gatherRocks(boatX, boatZ) {
 		rockMatrix = rocksCol2;
 	}
 
+	let researchWidth = rockSize + 1;
+	let researchRadius = Math.floor((researchWidth - 1) / 2);
+
+	// if (rockSize % 2 == 0) {
+	// 	researchWidth = rockSize + 2;
+	// } else {
+	// 	researchWidth = rockSize + 3;
+	// }
+
 	var startingPoint = {
-		"X": Math.floor(offsettedX - (rockSize + 3) / 2),
-		"Z": Math.floor(offsettedZ - (rockSize + 3) / 2)
+		"X": Math.floor(offsettedX - researchRadius),
+		"Z": Math.floor(offsettedZ - researchRadius)
 	}
 
-	for (let deltaX = 0; deltaX < (rockSize + 2); deltaX++) {
-		for (let deltaZ = 0; deltaZ < (rockSize + 2); deltaZ++) {
+	for (let deltaX = 0; deltaX < (researchWidth + 2); deltaX++) {
+		for (let deltaZ = 0; deltaZ < (researchWidth + 2); deltaZ++) {
 			let elem;
 
 			if(checkBoundsMatrix( (startingPoint["X"] + deltaX), (startingPoint["Z"] + deltaZ))) {
@@ -1109,8 +1094,6 @@ function gatherRocks(boatX, boatZ) {
 
 	return rocks;
 }
-
-
 
 /**
  * check if the the boat collides with a rock
@@ -1134,14 +1117,22 @@ function checkDeath(posX, posZ, angle) {
 		let rockZ = rock["Z"];
 		let rockAngle = rock["angle"];
 
-		var collision = separatingAxisTheorem(boatRectangle, buildRectangleRock(rockX, rockZ, rockAngle));
+		var rockRectangle = buildRectangleRock(rockX, rockZ, rockAngle);
+
+		var collision = separatingAxisTheorem(boatRectangle, rockRectangle);
 
 		if (collision) {
 			// collision detected, launch the error function
 			// console.log("COLLISION DETECTED");
 			errDetected = true;
 
+			//console.log("COLLISION: \nROCK: " /* + rockX + "," + rockZ + "," + rockAngle + ","  */+ rockRectangle +
+			//	"\nBOAT: " /* + posX + "," + posZ + "," + angle + "," */ + boatRectangle);
+
+			//var x = 2;
 			alert2("YOU HAVE FAILED!!!!!!!", "", "Try Again");
+
+			
 		}
 	}
 }
@@ -1161,7 +1152,7 @@ function prepare_object_rendering(object,light_mul){
 	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
 	gl.uniform1f(program.LampOn, LampOn.checked);
-	console.log(LampColor);
+	//console.log(LampColor);
 	gl.uniform4f(program.LampColor,LampColor[0],LampColor[1],LampColor[2],LampColor[3]);
 	gl.uniform1f(program.LampConeIn,LampConeIn);
 	gl.uniform1f(program.LampConeOut,LampConeOut);
@@ -1226,12 +1217,73 @@ function floatComparison(num1, num2, cComparison) {
 	}
 }
 
+/**
+ * 
+ * @param {number} hour 
+ * @returns {array} light vector
+ */
+function HourToSunlight(hour){
+	var angle = (hour - 6.0) * 15.0;
+	var lightVec = [-1.0,0.0,0.0,1.0];
+	if(angle >=0.0 && angle <= 180){
+		var ZRotation = utils.MakeRotateZMatrix(-angle);
+		lightVec = utils.multiplyMatrixVector(ZRotation,lightVec);
+	}
+	else{
+		if(angle >= 350.0){
+			lightVec[3] = 1.0 - utils.clamp((360.0 - angle)/10.0,0.0,0.7)
+		}
+		else{
+			if(angle>180){
+				lightVec[0] = 1.0;
+				lightVec[3] = 1.0 - utils.clamp((angle - 180.0)/10.0,0.0,0.7)
+			}
+			else{
+				lightVec[3] = 1.0 - utils.clamp((-angle)/10.0,0.0,0.7)
+			}
+		}
+	}
+
+//	console.log(lightVec)
+	return lightVec;
+}
+
+function parseColor(hexstring){
+	var fullhex = hexstring.substring(0,7);
+	R = parseInt(fullhex.substring(0,2),16)/255;
+	G = parseInt(fullhex.substring(2,4),16)/255;
+	B = parseInt(fullhex.substring(4,6),16)/255;
+	return [R,G,B]
+}
+
+/**
+ * 
+ * @param {number} hour 
+ * @returns {array} moon Position in an array of 3 elements X, Y, Z.
+ */
+function moonPosition(hour){
+	var moonPos = [1000.0, 0.0, 200];
+	var angle = (hour - 6.0) * 15.0;
+	var r = 40;
+
+	//console.log(angle);
+
+	//if(angle < 0.0 || angle > 180){
+		moonPos[0] = r * Math.cos(angle * Math.PI / 180);
+		moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
+		moonPos[2] = carZ + 100;
+	//}
+	//console.log(moonPos);
+	return moonPos;
+}
+
 
 function drawScene() {
 	if (!errDetected) {
 		// compute time interval
 		// console.log('X: ' + carX);
 		// console.log('Z: ' + carZ);
+		//console.log("X: " + carX + " Z: " + carZ);
 		gLightDir = HourToSunlight(TimeOfDay.value);
 		moonPos = moonPosition(TimeOfDay.value);
 		LampColor = parseColor(LampHex.value.substring(1,7));
@@ -1414,7 +1466,6 @@ function drawScene() {
 			// delta e' negativa se avanzo, positiva se indietreggio
 		}
 
-		checkDeath(carX, carZ, carAngle);
 
 		// draws the track
 		//gl.uniform1i(program.textureUniform, 1);
@@ -1535,6 +1586,8 @@ function drawScene() {
 		gl.uniform1i(program.textureUniform, 0);
 		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 		window.requestAnimationFrame(drawScene);
+
+		checkDeath(carX, carZ, carAngle);
 	}
 }
 
