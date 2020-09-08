@@ -918,10 +918,10 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 	let notCollide = false;
 
 	let axes = [
-		[boatVertices[1][0] - boatVertices[0][0], boatVertices[1][1] - boatVertices[1][0]], 
+		[boatVertices[1][0] - boatVertices[0][0], boatVertices[1][1] - boatVertices[0][1]], 
 		[boatVertices[1][0] - boatVertices[2][0], boatVertices[1][1] - boatVertices[2][1]], 
-		[rockVertices[1][0] - rockVertices[0][0], rockVertices[1][1] - rockVertices[1][0]],
-		[rockVertices[1][0] - boatVertices[2][0], rockVertices[1][1] - rockVertices[2][1]]
+		[rockVertices[1][0] - rockVertices[0][0], rockVertices[1][1] - rockVertices[0][1]],
+		[rockVertices[1][0] - rockVertices[2][0], rockVertices[1][1] - rockVertices[2][1]]
 	];
 
 	for (let i = 0; i < axes.length; i++) {
