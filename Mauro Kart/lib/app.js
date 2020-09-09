@@ -5,38 +5,36 @@ var canvas;
 var errDetected = false;
 var gl = null,
 	program = null,
-	carMesh = null,
+	boatMesh = null,
 	rock1 = new Array(numRocks).fill(null),
 	rock2 = new Array(numRocks).fill(null),
 	skybox = null,
 	imgtx = null,
 	skyboxLattx = null,
 	skyboxTbtx = null;
-	skyboxFrtx = null;
-	skyboxTptx = null;
-	skyboxLftx = null;
-	skyboxRgtx = null;
-	skyboxBktx = null;
-	skyboxBttx = null;
-	rocktx = null;
+skyboxFrtx = null;
+skyboxTptx = null;
+skyboxLftx = null;
+skyboxRgtx = null;
+skyboxBktx = null;
+skyboxBttx = null;
+rocktx = null;
 var boatResize = 0.01;
 var rockResize = 1.5;
-var projectionMatrix, 
+var projectionMatrix,
 	perspectiveMatrix,
 	viewMatrix,
 	worldMatrix,
 	gLightDir,
 	moonPos,
 	orientLight;
-	ambFactor = 1;
-	LampColor = [0,0,0,0];
-	LampConeIn = 60;
-	LampConeOut = 120;
-	LampTarget = 20;
-	LampDecay = 2;
+ambFactor = 1;
+LampColor = [0, 0, 0, 0];
+LampConeIn = 60;
+LampConeOut = 120;
+LampTarget = 20;
+LampDecay = 2;
 
-//DELETE ME
-var ppx=0.0,ppy=0.0,ppz=0.0, ppdir = 0.0,ppan = 0.0;
 
 //Parameters for Camera
 var cx = 4.5;
@@ -46,52 +44,53 @@ var elevation = 0.01;
 var angle = 0.01;
 var roll = 0.01;
 
-var carAngle = 0;
-var carX = -0.0;
-var carY = -0.7;
-var carZ = -67;
-var correctionFactor =5;
+var boatAngle = 0;
+var boatX = -0.0;
+var boatY = -0.7;
+var boatZ = -67;
+var correctionFactor = 5;
 var correctionTime = 0;
 var newSector = false;
 var lookRadius = 10.0;
 var LampPos;
-var	LampDir = [0.0,0.0,-1.0];
+var LampDir = [0.0, 0.0, -1.0];
+var PartyColor = [0.0, 0.0, 0.0, 1.0];
 
 
 
 
 var keys = [];
- 
+
 
 var vz = 0.0;
 var rvy = 0.0;
 
-var keyFunctionDown = function(e) {
-	console.log('X:' + carX);
-	// console.log('Y:' + carY);
-	 console.log('Z:' + carZ);
-  if(!keys[e.keyCode]) {
-  	keys[e.keyCode] = true;
-	switch(e.keyCode) {
-	  case 37:
+var keyFunctionDown = function (e) {
+	console.log('X:' + boatX);
+	// console.log('Y:' + boatY);
+	console.log('Z:' + boatZ);
+	if (!keys[e.keyCode]) {
+		keys[e.keyCode] = true;
+		switch (e.keyCode) {
+			case 37:
 
-		rvy = rvy + 1.0;
-		//vz = vz-1;
-		break;
-	  case 39:
+				rvy = rvy + 1.0;
+				//vz = vz-1;
+				break;
+			case 39:
 
-		rvy = rvy - 1.0;
-		break;
-	  case 38:
+				rvy = rvy - 1.0;
+				break;
+			case 38:
 
-		vz = vz - 0.4;
-		break;
-	  case 40:
+				vz = vz - 0.4;
+				break;
+			case 40:
 
-		vz = vz + 1.0;
-		break;
+				vz = vz + 1.0;
+				break;
+		}
 	}
-  }
 }
 
 function sleep(ms) {
@@ -99,7 +98,7 @@ function sleep(ms) {
 }
 
 var keyFunctionUp = async function (e) {
-	
+
 	var currentTime = (new Date).getTime();
 	var deltaT;
 	if (lastUpdateTime) {
@@ -110,45 +109,45 @@ var keyFunctionUp = async function (e) {
 	lastUpdateTime = currentTime;
 
 	if (keys[e.keyCode]) {
-		//console.log(carAngle)
+		//console.log(boatAngle)
 		keys[e.keyCode] = false;
 		switch (e.keyCode) {
 			case 37:
-				
+
 				rvy = rvy - 1.0;
-				//ruota la barca di carAngle gradi indietro
-				//carAngle;
+				//ruota la barca di boatAngle gradi indietro
+				//boatAngle;
 				var numberOfDelta;
-				if (carAngle < 0) {
-					numberOfDelta = carAngle * -correctionFactor;
+				if (boatAngle < 0) {
+					numberOfDelta = boatAngle * -correctionFactor;
 				}
 				else {
-					numberOfDelta = carAngle * correctionFactor;
+					numberOfDelta = boatAngle * correctionFactor;
 				}
-				var deltaAngle = carAngle / numberOfDelta;
-				//console.log(carAngle)
+				var deltaAngle = boatAngle / numberOfDelta;
+				//console.log(boatAngle)
 				for (var i = 0; i < numberOfDelta && !(rvy); i++) {
 
-					carAngle = (carAngle - deltaAngle);
-					
+					boatAngle = (boatAngle - deltaAngle);
+
 
 					await sleep(correctionTime / numberOfDelta);
 				}
-				if (Math.round(parseFloat(carAngle)) == parseFloat(0.0) && !rvy) {
-					carAngle = carAngle - carAngle;
+				if (Math.round(parseFloat(boatAngle)) == parseFloat(0.0) && !rvy) {
+					boatAngle = boatAngle - boatAngle;
 				}
 
 
-				//console.log("FINAL ANGLE (left): " + carAngle);
+				//console.log("FINAL ANGLE (left): " + boatAngle);
 
 
-				// carAngle = carAngle-deltaAngle;
+				// boatAngle = boatAngle-deltaAngle;
 				// await sleep(2000);
 
-				// carAngle = carAngle-deltaAngle;
+				// boatAngle = boatAngle-deltaAngle;
 				// await sleep(2000);
 
-				// carAngle = carAngle-deltaAngle;
+				// boatAngle = boatAngle-deltaAngle;
 
 				//rvy = rvy .0;
 
@@ -156,40 +155,40 @@ var keyFunctionUp = async function (e) {
 				//vz = vz+1;
 				break;
 			case 39:
-				
+
 				rvy = rvy + 1.0;
 
 				var numberOfDelta;
-				if (carAngle < 0) {
-					numberOfDelta = carAngle * -correctionFactor;
+				if (boatAngle < 0) {
+					numberOfDelta = boatAngle * -correctionFactor;
 				}
 				else {
-					numberOfDelta = carAngle * correctionFactor;
+					numberOfDelta = boatAngle * correctionFactor;
 				}
-				var deltaAngle = carAngle / numberOfDelta;
-				//console.log(carAngle)
+				var deltaAngle = boatAngle / numberOfDelta;
+				//console.log(boatAngle)
 				for (var i = 0; i < numberOfDelta && !(rvy); i++) {
 
-					carAngle = (carAngle - deltaAngle);
-					//console.log(carAngle);
+					boatAngle = (boatAngle - deltaAngle);
+					//console.log(boatAngle);
 
 					await sleep(correctionTime / numberOfDelta);
 				}
-				if (Math.round(parseFloat(carAngle)) == parseFloat(0.0) && !rvy) {
-					carAngle = carAngle - carAngle;
+				if (Math.round(parseFloat(boatAngle)) == parseFloat(0.0) && !rvy) {
+					boatAngle = boatAngle - boatAngle;
 				}
 
-				//carAngle = 0.0;
+				//boatAngle = 0.0;
 
-				//console.log("FINAL ANGLE (right): " + carAngle);
+				//console.log("FINAL ANGLE (right): " + boatAngle);
 
 				break;
 			case 38:
-				
+
 				vz = vz + 0.4;
 				break;
 			case 40:
-				
+
 				vz = vz - 1.0;
 				break;
 		}
@@ -199,19 +198,19 @@ var keyFunctionUp = async function (e) {
 var aspectRatio;
 
 function doResize() {
-    // set canvas dimensions
+	// set canvas dimensions
 	var canvas = document.getElementById("my-canvas");
-    if((window.innerWidth > 40) && (window.innerHeight > 240)) {
-		canvas.width  = (window.innerWidth-16) * 0.7;
-		canvas.height = window.innerHeight-200;
-		var w=canvas.clientWidth;
-		var h=canvas.clientHeight;
-		
+	if ((window.innerWidth > 40) && (window.innerHeight > 240)) {
+		canvas.width = (window.innerWidth - 16) * 0.7;
+		canvas.height = window.innerHeight - 200;
+		var w = canvas.clientWidth;
+		var h = canvas.clientHeight;
+
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);
 		gl.viewport(0.0, 0.0, w, h);
-		
-		aspectRatio = w/h;
-    }
+
+		aspectRatio = w / h;
+	}
 }
 
 /**
@@ -223,30 +222,30 @@ function doResize() {
  */
 function alert2(message, title, buttonText) {
 
-    buttonText = (buttonText == undefined) ? "Ok" : buttonText;
-    title = (title == undefined) ? "The page says:" : title;
+	buttonText = (buttonText == undefined) ? "Ok" : buttonText;
+	title = (title == undefined) ? "The page says:" : title;
 
-    var div = $('#dialog1');
-    div.html(message);
-    div.attr('title', title);
-    div.dialog({
-        autoOpen: true,
-        modal: true,
-        draggable: false,
-        resizable: false,
-        buttons: [{
-            text: buttonText,
-            click: function () {
+	var div = $('#dialog1');
+	div.html(message);
+	div.attr('title', title);
+	div.dialog({
+		autoOpen: true,
+		modal: true,
+		draggable: false,
+		resizable: false,
+		buttons: [{
+			text: buttonText,
+			click: function () {
 				$(this).dialog("close");
 				window.location.reload(false);
 
-                div.remove();
-            }
-        }]
-    });
+				div.remove();
+			}
+		}]
+	});
 }
 
-		
+
 // Vertex shader
 var vs = `#version 300 es
 
@@ -337,41 +336,41 @@ function doMouseUp(event) {
 	mouseState = false;
 }
 function doMouseMove(event) {
-	if(mouseState) {
+	if (mouseState) {
 		var dx = event.pageX - lastMouseX;
 		var dy = lastMouseY - event.pageY;
 		lastMouseX = event.pageX;
 		lastMouseY = event.pageY;
-		
-		if((dx != 0) || (dy != 0)) {
+
+		if ((dx != 0) || (dy != 0)) {
 			angle = angle + 0.5 * dx;
 			elevation = elevation + 0.5 * dy;
 		}
 	}
 }
 function doMouseWheel(event) {
-	var nLookRadius = lookRadius + event.wheelDelta/1000.0;
-	if((nLookRadius > 2.0) && (nLookRadius < 20.0)) {
+	var nLookRadius = lookRadius + event.wheelDelta / 1000.0;
+	if ((nLookRadius > 2.0) && (nLookRadius < 20.0)) {
 		lookRadius = nLookRadius;
 	}
 }
 
 // texture loader callback
-var textureLoaderCallback = function() {
+var textureLoaderCallback = function () {
 	var textureId = gl.createTexture();
 	gl.activeTexture(gl.TEXTURE0 + this.txNum);
-	gl.bindTexture(gl.TEXTURE_2D, textureId);		
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this);		
-// set the filtering so we don't need mips
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+	gl.bindTexture(gl.TEXTURE_2D, textureId);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this);
+	// set the filtering so we don't need mips
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 }
 
 // The real app starts here
-function main(){
-	
+function main() {
+
 	// setup everything else
 	var canvas = document.getElementById("my-canvas");
 	canvas.addEventListener("mousedown", doMouseDown, false);
@@ -381,16 +380,16 @@ function main(){
 	window.addEventListener("keyup", keyFunctionUp, false);
 	window.addEventListener("keydown", keyFunctionDown, false);
 	window.onresize = doResize;
-	canvas.width  = (window.innerWidth-16) * 0.7;
-	canvas.height = window.innerHeight-200;
-	
-	try{
-		gl= canvas.getContext("webgl2");
-	} catch(e){
+	canvas.width = (window.innerWidth - 16) * 0.7;
+	canvas.height = window.innerHeight - 200;
+
+	try {
+		gl = canvas.getContext("webgl2");
+	} catch (e) {
 		console.log(e);
 	}
-	
-	if(gl){
+
+	if (gl) {
 		// Compile and link shaders
 		program = gl.createProgram();
 		var v1 = gl.createShader(gl.VERTEX_SHADER);
@@ -401,19 +400,19 @@ function main(){
 		}
 		var v2 = gl.createShader(gl.FRAGMENT_SHADER);
 		gl.shaderSource(v2, fs)
-		gl.compileShader(v2);		
+		gl.compileShader(v2);
 		if (!gl.getShaderParameter(v2, gl.COMPILE_STATUS)) {
 			alert("ERROR IN FS SHADER : " + gl.getShaderInfoLog(v2));
-		}			
+		}
 		gl.attachShader(program, v1);
 		gl.attachShader(program, v2);
-		gl.linkProgram(program);				
-		
+		gl.linkProgram(program);
+
 		gl.useProgram(program);
 
 		// Load mesh using the webgl-obj-loader library
 
-		carMesh = new OBJ.Mesh(boatObjStr);
+		boatMesh = new OBJ.Mesh(boatObjStr);
 		initRocks();
 		// rock[0] = new OBJ.Mesh(rockObjStr)
 		skybox = new OBJ.Mesh(trackNfieldObjStr);
@@ -427,13 +426,13 @@ function main(){
 		skyboxRight = new OBJ.Mesh(trackNfieldObjStr);
 		skyboxTop = new OBJ.Mesh(trackNfieldObjStr);
 		skyboxBottom = new OBJ.Mesh(trackNfieldObjStr);
-		
+
 
 		// Create the textures
 		imgtx = new Image();
 		imgtx.txNum = 0;
 		imgtx.onload = textureLoaderCallback;
-		imgtx.src = CarTextureData;
+		imgtx.src = boatTextureData;
 
 		skyboxLattx = new Image();
 		skyboxLattx.txNum = 1;
@@ -454,17 +453,17 @@ function main(){
 		skyboxLftx.txNum = 4;
 		skyboxLftx.onload = textureLoaderCallback;
 		skyboxLftx.src = leftTextureData;
-		
+
 		skyboxRgtx = new Image();
 		skyboxRgtx.txNum = 5;
 		skyboxRgtx.onload = textureLoaderCallback;
 		skyboxRgtx.src = rightTextureData;
-		
+
 		skyboxTptx = new Image();
 		skyboxTptx.txNum = 6;
 		skyboxTptx.onload = textureLoaderCallback;
 		skyboxTptx.src = topTextureData;
-		
+
 		rocktx = new Image();
 		rocktx.txNum = 7;
 		rocktx.onload = textureLoaderCallback;
@@ -473,21 +472,21 @@ function main(){
 		skyboxBttx.txNum = 8;
 		skyboxBttx.onload = textureLoaderCallback;
 		skyboxBttx.src = bottomTextureData;
-		
+
 		skyboxBktx = new Image();
 		skyboxBktx.txNum = 9;
 		skyboxBktx.onload = textureLoaderCallback;
 		skyboxBktx.src = backTextureData;
-		
 
-		
+
+
 		// links mesh attributes to shader attributes
 		program.vertexPositionAttribute = gl.getAttribLocation(program, "in_pos");
 		gl.enableVertexAttribArray(program.vertexPositionAttribute);
-		 
+
 		program.vertexNormalAttribute = gl.getAttribLocation(program, "in_norm");
 		gl.enableVertexAttribArray(program.vertexNormalAttribute);
-		 
+
 		program.textureCoordAttribute = gl.getAttribLocation(program, "in_uv");
 		gl.enableVertexAttribArray(program.textureCoordAttribute);
 
@@ -497,18 +496,18 @@ function main(){
 		program.textureUniform = gl.getUniformLocation(program, "u_texture");
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
 		// adding cusotm lights
-		program.LampOn = gl.getUniformLocation(program,"LampOn");
-		program.LampPos = gl.getUniformLocation(program,"LampPos");
-		program.LampDir = gl.getUniformLocation(program,"LampDir");
-		program.LampColor = gl.getUniformLocation(program,"LampCol");
-		program.LampConeIn = gl.getUniformLocation(program,"LConeIn");
-		program.LampConeOut = gl.getUniformLocation(program,"LConeOut");
-		program.LampTarget = gl.getUniformLocation(program,"LampTarget");
-		program.LampDecay = gl.getUniformLocation(program,"LampDecay");
-		program.moonPos = gl.getUniformLocation(program,"moonPos");
-//		program.ambFact = gl.getUniformLocation(program, "ambFact");
+		program.LampOn = gl.getUniformLocation(program, "LampOn");
+		program.LampPos = gl.getUniformLocation(program, "LampPos");
+		program.LampDir = gl.getUniformLocation(program, "LampDir");
+		program.LampColor = gl.getUniformLocation(program, "LampCol");
+		program.LampConeIn = gl.getUniformLocation(program, "LConeIn");
+		program.LampConeOut = gl.getUniformLocation(program, "LConeOut");
+		program.LampTarget = gl.getUniformLocation(program, "LampTarget");
+		program.LampDecay = gl.getUniformLocation(program, "LampDecay");
+		program.moonPos = gl.getUniformLocation(program, "moonPos");
+		//		program.ambFact = gl.getUniformLocation(program, "ambFact");
 		//OBJ.initMeshBuffers(gl, rock[0])
-		OBJ.initMeshBuffers(gl, carMesh);
+		OBJ.initMeshBuffers(gl, boatMesh);
 		OBJ.initMeshBuffers(gl, skybox);
 		OBJ.initMeshBuffers(gl, skybox3);
 		OBJ.initMeshBuffers(gl, skybox2);
@@ -519,22 +518,22 @@ function main(){
 		OBJ.initMeshBuffers(gl, skyboxBack);
 		OBJ.initMeshBuffers(gl, skyboxBottom);
 
-		
-		
+
+
 		// prepares the world, view and projection matrices.
-		var w=canvas.clientWidth;
-		var h=canvas.clientHeight;
-		
+		var w = canvas.clientWidth;
+		var h = canvas.clientHeight;
+
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);
 		gl.viewport(0.0, 0.0, w, h);
-		
-//		perspectiveMatrix = utils.MakePerspective(60, w/h, 0.1, 1000.0);
-		aspectRatio = w/h;
-		
-	 // turn on depth testing
-	    gl.enable(gl.DEPTH_TEST);
-	
-	
+
+		//		perspectiveMatrix = utils.MakePerspective(60, w/h, 0.1, 1000.0);
+		aspectRatio = w / h;
+
+		// turn on depth testing
+		gl.enable(gl.DEPTH_TEST);
+
+
 		// algin the skybox with the light
 		gLightDir = [1.0, 0.0, 0.0, 0.0];
 
@@ -546,13 +545,13 @@ function main(){
 		// generateRockPositions(0, 200, rocks2);
 
 		drawScene();
-	}else{
+	} else {
 		alert("Error: WebGL not supported by your browser!");
 	}
 }
 
 var lastUpdateTime;
-var camVel = [0,0,0];
+var camVel = [0, 0, 0];
 var fSk = 500.0;
 var fDk = 2.0 * Math.sqrt(fSk);
 
@@ -572,11 +571,11 @@ var ASur = 1.0;	// Not used yet
 var ASdr = 0.5;	// Not used yet
 var trackZmulti = 10.0;
 var trackScale = 100.0;
-var trackZpos = [0,200,400];
+var trackZpos = [0, 200, 400];
 var skyboxScale = 800
-var carLinAcc = 0.0;
-var carLinVel = 0.0;
-var carAngVel = 0.0;
+var boatLinAcc = 0.0;
+var boatLinVel = 0.0;
+var boatAngVel = 0.0;
 var preVz = 0;
 
 /**
@@ -588,9 +587,9 @@ var preVz = 0;
  * 
  * @returns an array containing the X and Z coordinate of the generated rocks
  */
-function generateRockPositionOnMatrix(lowerLimit, upperLimit, numElements){
+function generateRockPositionOnMatrix(lowerLimit, upperLimit, numElements) {
 	let rockPos = [];
-	for(i = 0; i<numElements;i++){
+	for (i = 0; i < numElements; i++) {
 		var positionX = Math.floor(Math.random() * 199) - 99; // between [-99 and 100]
 		var positionZ = lowerLimit + Math.floor(Math.random() * (upperLimit - lowerLimit));
 		rockPos[i] = [positionX, positionZ];
@@ -607,7 +606,7 @@ function generateRockPositionOnMatrix(lowerLimit, upperLimit, numElements){
  * 
  * @returns an array containing the generated rotations for the rocks; Dom [0, 360]
  */
-function generateRockRotationOnMatrix(numElements, destMatrix, rocksPosition){
+function generateRockRotationOnMatrix(numElements, destMatrix, rocksPosition) {
 	let rockRot = [];
 	for (i = 0; i < numElements; i++) {
 		rockRot[i] = Math.floor(Math.random() * 360);
@@ -623,14 +622,14 @@ function generateRockRotationOnMatrix(numElements, destMatrix, rocksPosition){
 	return rockRot;
 }
 
-function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocksArray){
+function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocksArray) {
 	// var angleX = Math.floor(Math.random() * 360);
 	// var angleY = Math.floor(Math.random() * 360);
 	// var angleZ = Math.floor(Math.random() * 360);
 
 	//var rotatedMatrixRock = utils.multiplyMatrices(utils.MakeRotateZMatrix(angleZ),utils.multiplyMatrices(utils.MakeRotateYMatrix(angleY),utils.multiplyMatrices(utils.MakeRotateXMatrix(angleX),utils.identityMatrix)));
 
-	for(i=0; i < numElements; i++){
+	for (i = 0; i < numElements; i++) {
 		// draws the rock
 		/*
 		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].vertexBuffer);
@@ -648,19 +647,19 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 		//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], gLightDir[3]);
 
 
-		var	rockTrans = utils.MakeScaleMatrix(rockResize);
-		rockTrans = utils.multiplyMatrices(utils.MakeRotateYMatrix(rockRotationsArray[i]),rockTrans);
+		var rockTrans = utils.MakeScaleMatrix(rockResize);
+		rockTrans = utils.multiplyMatrices(utils.MakeRotateYMatrix(rockRotationsArray[i]), rockTrans);
 		var rockx = rockPositionsArray[i][0];
 		var rocky = 0;
 		var rockz = rockPositionsArray[i][1];
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),rockTrans));
-		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.invertMatrix(utils.transposeMatrix(rockTrans))));
-		gl.uniformMatrix4fv(program.WMat,gl.FALSE,utils.transposeMatrix(utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),rockTrans)));	
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx, rocky, rockz), rockTrans));
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(utils.invertMatrix(utils.transposeMatrix(rockTrans))));
+		gl.uniformMatrix4fv(program.WMat, gl.FALSE, utils.transposeMatrix(utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx, rocky, rockz), rockTrans)));
 		gl.drawElements(gl.TRIANGLES, rocksArray[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
 	}
-	
+
 }
 
 /** Generate meshes for the rocks */
@@ -684,16 +683,16 @@ var rocksCol1 = [];
 var rocksCol2 = [];
 
 /** Function that initialize rock positions at the start of the game; this function MUST be called only once per game */
-function startingRockBuffer(){
+function startingRockBuffer() {
 	isStarting = false;
-	position2 = generateRockPositionOnMatrix((1)*200, (1)*200+200, numRocks);
+	position2 = generateRockPositionOnMatrix((1) * 200, (1) * 200 + 200, numRocks);
 	rotation2 = generateRockRotationOnMatrix(numRocks, rocksCol2, position2);
 
-	position1 = generateRockPositionOnMatrix((0)*200, (0)*200+200, numRocks);
+	position1 = generateRockPositionOnMatrix((0) * 200, (0) * 200 + 200, numRocks);
 	rotation1 = generateRockRotationOnMatrix(numRocks, rocksCol1, position1);
 	//da chiamare sempre e comunque anche senza modifiche
-	generateRock(position1,rotation1, numRocks, rock1)
-	generateRock(position2,rotation2, numRocks, rock2)
+	generateRock(position1, rotation1, numRocks, rock1)
+	generateRock(position2, rotation2, numRocks, rock2)
 
 }
 
@@ -704,7 +703,7 @@ function startingRockBuffer(){
  * @param {boolean} isSectionChanged true if the boat has reached the checkpoint, false otherwise
  * @param {number} sectionNum int value representing the current section the boat is in
  */
-function rockBuffer(isEven, isSectionChanged, sectionNum){
+function rockBuffer(isEven, isSectionChanged, sectionNum) {
 	if (isSectionChanged) {
 		if (isEven) {
 			//sono in una sezione pari e genero una sezione dispari
@@ -725,12 +724,12 @@ function rockBuffer(isEven, isSectionChanged, sectionNum){
  * Initialize square matrices for rocks
  */
 function initRock() {
-	for (let i = 0; i < 200; i ++) {
+	for (let i = 0; i < 200; i++) {
 		rocksCol1[i] = [];
 		rocksCol2[i] = [];
 		for (let j = 0; j < 200; j++) {
-			rocksCol1[i][j] = {"X": null, "Z": null, "angle": null};
-			rocksCol2[i][j] = {"X": null, "Z": null, "angle": null};
+			rocksCol1[i][j] = { "X": null, "Z": null, "angle": null };
+			rocksCol2[i][j] = { "X": null, "Z": null, "angle": null };
 		}
 	}
 }
@@ -753,7 +752,7 @@ function distance(pointAX, pointAZ, pointBX, pointBZ) {
  * @param {number} number a numeric expression
  */
 function getHundreds(number) {
-	return Math.trunc(number/100);
+	return Math.trunc(number / 100);
 }
 
 /**
@@ -786,7 +785,7 @@ function dotProduct2D(firstVector, secondVector) {
  */
 function project(axisX, axisZ, pointX, pointZ, mainAxis) {
 	// formula: (axisX * pointX + axisZ * pointZ) * mainAxis / (axisX^2 + axisZ^2)
-	
+
 	var den = Math.pow(axisX, 2) + Math.pow(axisZ, 2);
 	var num = axisX * pointX + axisZ * pointZ;
 
@@ -889,7 +888,7 @@ function buildRectangleBoat(centerX, centerZ, angle) {
 function buildRectangleRock(rockCenterX, rockCenterZ, rockAngle) {
 	var rectangleVerteces;
 
-	let correctionCoefficient = 0.8;
+	let correctionCoefficient = 0.3;
 
 	let rockLength = rockBaseDimensions[1] * rockResize * correctionCoefficient;
 	let rockWidth = rockBaseDimensions[0] * rockResize * correctionCoefficient;
@@ -945,15 +944,15 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 	let notCollide = false;
 
 	let axes = [
-		[boatVertices[1][0] - boatVertices[0][0], boatVertices[1][1] - boatVertices[0][1]], 
-		[boatVertices[1][0] - boatVertices[2][0], boatVertices[1][1] - boatVertices[2][1]], 
+		[boatVertices[1][0] - boatVertices[0][0], boatVertices[1][1] - boatVertices[0][1]],
+		[boatVertices[1][0] - boatVertices[2][0], boatVertices[1][1] - boatVertices[2][1]],
 		[rockVertices[1][0] - rockVertices[0][0], rockVertices[1][1] - rockVertices[0][1]],
 		[rockVertices[1][0] - rockVertices[2][0], rockVertices[1][1] - rockVertices[2][1]]
 	];
 
 	for (let i = 0; i < axes.length; i++) {
 		const axis = normalizeVector2D(axes[i][0], axes[i][1]);
-		
+
 		// var boatVertOnAxis = [
 		// 	(project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[0]) * axis[0] + 
 		// 		project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[1]) * axis[1]),
@@ -991,9 +990,9 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 		];
 
 		var bMax = boatVertOnAxis[0];
-		var	bMin = boatVertOnAxis[0];
-		var	rMax = rockVertOnAxis[0];
-		var	rMin = rockVertOnAxis[0];
+		var bMin = boatVertOnAxis[0];
+		var rMax = rockVertOnAxis[0];
+		var rMin = rockVertOnAxis[0];
 
 		for (let i = 1; i < boatVertOnAxis.length; i++) {
 			const boat = boatVertOnAxis[i];
@@ -1020,8 +1019,8 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 		// if two object are separated along one axis, then they are not colliding
 		// if two object are separated along one axis, then this method can saftly conclude computation,
 		// returning the requested value
-		var separated = !( floatComparison(rMax, bMin, ">") && floatComparison(rMin, bMax, "<"));
-		
+		var separated = !(floatComparison(rMax, bMin, ">") && floatComparison(rMin, bMax, "<"));
+
 		//(floatComparison(bMax, rMin, "<")) || (floatComparison(rMax, bMin, "<"));
 
 		if (separated) {
@@ -1068,7 +1067,7 @@ function gatherRocks(boatX, boatZ) {
 
 	// choice between rock1 and rock2
 	var rockMatrix;
-	if ( (Math.floor(getHundreds(roundedZ) / 2)) % 2 == 0 ) {
+	if ((Math.floor(getHundreds(roundedZ) / 2)) % 2 == 0) {
 		rockMatrix = rocksCol1;
 	} else {
 		rockMatrix = rocksCol2;
@@ -1092,7 +1091,7 @@ function gatherRocks(boatX, boatZ) {
 		for (let deltaZ = 0; deltaZ < (researchWidth + 2); deltaZ++) {
 			let elem;
 
-			if(checkBoundsMatrix( (startingPoint["X"] + deltaX), (startingPoint["Z"] + deltaZ))) {
+			if (checkBoundsMatrix((startingPoint["X"] + deltaX), (startingPoint["Z"] + deltaZ))) {
 				elem = rockMatrix[startingPoint["X"] + deltaX][startingPoint["Z"] + deltaZ];
 			}
 
@@ -1115,7 +1114,7 @@ function gatherRocks(boatX, boatZ) {
  */
 function checkDeath(posX, posZ, angle) {
 	// build a rectangle around the center of the boat
-	var boatRectangle = buildRectangleBoat(posX, posZ, angle);	
+	var boatRectangle = buildRectangleBoat(posX, posZ, angle);
 
 	// get nearby rocks
 	var nearbyRocks = gatherRocks(posX, posZ);
@@ -1133,7 +1132,7 @@ function checkDeath(posX, posZ, angle) {
 
 		var collision = separatingAxisTheorem(boatRectangle, rockRectangle);
 
-		if (collision ) {
+		if (collision) {
 			// collision detected, launch the error function
 			// console.log("COLLISION DETECTED");
 			errDetected = true;
@@ -1144,31 +1143,31 @@ function checkDeath(posX, posZ, angle) {
 			//var x = 2;
 			alert2("YOU HAVE FAILED!!!!!!!", "", "Try Again");
 
-			
+
 		}
 	}
 }
 
-function get_boat_prow(Yrotation){
-	var prowPos = (boatBaseDimensions[0] *boatResize)-5;
+function get_boat_prow(Yrotation) {
+	var prowPos = (boatBaseDimensions[0] * boatResize) - 5;
 	var prowX = prowPos * Math.sin(get_angle(Yrotation));
 	var prowZ = prowPos * Math.cos(get_angle(Yrotation));
-	return [prowX,prowZ]
+	return [prowX, prowZ]
 }
 
 
-function prepare_light(){
+function prepare_light() {
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], gLightDir[3]);
-	gl.uniform3f(program.moonPos,moonPos[0],moonPos[1],moonPos[2]);
+	gl.uniform3f(program.moonPos, moonPos[0], moonPos[1], moonPos[2]);
 	gl.uniform1f(program.LampOn, LampOn.checked);
-	gl.uniform4f(program.LampColor,LampColor[0],LampColor[1],LampColor[2],LampColor[3]);
-	gl.uniform1f(program.LampConeIn,LampConeIn);
-	gl.uniform3f(program.LampDir,LampDir[0],LampDir[1],LampDir[2]);
-	gl.uniform1f(program.LampConeOut,LampConeOut);
-	gl.uniform1f(program.LampTarget,LampTarget);
+	gl.uniform4f(program.LampColor, LampColor[0], LampColor[1], LampColor[2], LampColor[3]);
+	gl.uniform1f(program.LampConeIn, LampConeIn);
+	gl.uniform3f(program.LampDir, LampDir[0], LampDir[1], LampDir[2]);
+	gl.uniform1f(program.LampConeOut, LampConeOut);
+	gl.uniform1f(program.LampTarget, LampTarget);
 	gl.uniform1f(program.LampDecay, LampDecay);
-	let prowPos = get_boat_prow(carAngle);
-	gl.uniform3f(program.LampPos,carX + prowPos[0],carY+1,carZ+prowPos[1]);
+	let prowPos = get_boat_prow(boatAngle);
+	gl.uniform3f(program.LampPos, boatX + prowPos[0], boatY + 1, boatZ + prowPos[1]);
 }
 
 /**
@@ -1176,11 +1175,11 @@ function prepare_light(){
  * @param {OBJ} object the object to be rendered
  * @param {number} light_mul a value from 0.0 to 1.0 determining how much ambient light to add
  */
-function prepare_object_rendering(object){
+function prepare_object_rendering(object) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.vertexBuffer);
 	gl.vertexAttribPointer(program.vertexPositionAttribute, object.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.textureBuffer);
-    gl.vertexAttribPointer(program.textureCoordAttribute, object.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.vertexAttribPointer(program.textureCoordAttribute, object.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.normalBuffer);
 	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
@@ -1190,19 +1189,19 @@ function prepare_object_rendering(object){
  * Generates the track elements on which the boat rides.
  * It is also responsible for moving the track in order not to go out of bounds
  */
-function generateTrack(){
+function generateTrack() {
 	// draws the skybox
 
-	if(carZ > trackZpos[0] + 150){
-		trackZpos = [trackZpos[1],trackZpos[2],trackZpos[2]+200]
+	if (boatZ > trackZpos[0] + 150) {
+		trackZpos = [trackZpos[1], trackZpos[2], trackZpos[2] + 200]
 	}
-	for(var i = 0; i<3;i++){
+	for (var i = 0; i < 3; i++) {
 		prepare_object_rendering(skybox);
-		var scaleMat = utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale);
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), scaleMat));
+		var scaleMat = utils.MakeScaleNuMatrix(trackScale, trackScale, trackScale);
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 0, trackZpos[i]), scaleMat));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(utils.invertMatrix(utils.transposeMatrix(scaleMat))));
-		gl.uniformMatrix4fv(program.WMat,gl.FALSE,utils.transposeMatrix(utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), scaleMat)));
+		gl.uniformMatrix4fv(program.WMat, gl.FALSE, utils.transposeMatrix(utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 0, trackZpos[i]), scaleMat)));
 		gl.uniform1i(program.textureUniform, 1);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	}
@@ -1220,7 +1219,7 @@ function floatComparison(num1, num2, cComparison) {
 	switch (cComparison) {
 		case ">":
 			return parseFloat(num1) > parseFloat(num2);
-		
+
 		case "<":
 			return parseFloat(num1) < parseFloat(num2);
 
@@ -1229,10 +1228,10 @@ function floatComparison(num1, num2, cComparison) {
 
 		case "<=":
 			return parseFloat(num1) <= parseFloat(num2);
-		
+
 		case "==":
 			return parseFloat(num1) == parseFloat(num2);
-	
+
 		case "===":
 			return parseFloat(num1) === parseFloat(num2);
 
@@ -1246,38 +1245,38 @@ function floatComparison(num1, num2, cComparison) {
  * @param {number} hour 
  * @returns {array} light vector
  */
-function HourToSunlight(hour){
+function HourToSunlight(hour) {
 	var angle = (hour - 6.0) * 15.0;
-	var lightVec = [-1.0,0.0,0.0,1.0];
-	if(angle >=0.0 && angle <= 180){
+	var lightVec = [-1.0, 0.0, 0.0, 1.0];
+	if (angle >= 0.0 && angle <= 180) {
 		var ZRotation = utils.MakeRotateZMatrix(-angle);
-		lightVec = utils.multiplyMatrixVector(ZRotation,lightVec);
+		lightVec = utils.multiplyMatrixVector(ZRotation, lightVec);
 	}
-	else{
-		if(angle >= 350.0){
-			lightVec[3] = 1.0 - utils.clamp((360.0 - angle)/10.0,0.0,0.7)
+	else {
+		if (angle >= 350.0) {
+			lightVec[3] = 1.0 - utils.clamp((360.0 - angle) / 10.0, 0.0, 0.7)
 		}
-		else{
-			if(angle>180){
+		else {
+			if (angle > 180) {
 				lightVec[0] = 1.0;
-				lightVec[3] = 1.0 - utils.clamp((angle - 180.0)/10.0,0.0,0.7)
+				lightVec[3] = 1.0 - utils.clamp((angle - 180.0) / 10.0, 0.0, 0.7)
 			}
-			else{
-				lightVec[3] = 1.0 - utils.clamp((-angle)/10.0,0.0,0.7)
+			else {
+				lightVec[3] = 1.0 - utils.clamp((-angle) / 10.0, 0.0, 0.7)
 			}
 		}
 	}
 
-//	console.log(lightVec)
+	//	console.log(lightVec)
 	return lightVec;
 }
 
-function parseColor(hexstring){
-	var fullhex = hexstring.substring(0,7);
-	R = parseInt(fullhex.substring(0,2),16)/255;
-	G = parseInt(fullhex.substring(2,4),16)/255;
-	B = parseInt(fullhex.substring(4,6),16)/255;
-	return [R,G,B]
+function parseColor(hexstring) {
+	var fullhex = hexstring.substring(0, 7);
+	R = parseInt(fullhex.substring(0, 2), 16) / 255;
+	G = parseInt(fullhex.substring(2, 4), 16) / 255;
+	B = parseInt(fullhex.substring(4, 6), 16) / 255;
+	return [R, G, B]
 }
 
 /**
@@ -1285,17 +1284,17 @@ function parseColor(hexstring){
  * @param {number} hour 
  * @returns {array} moon Position in an array of 3 elements X, Y, Z.
  */
-function moonPosition(hour){
+function moonPosition(hour) {
 	var moonPos = [1000.0, 0.0, 200];
 	var angle = (hour - 6.0) * 15.0;
-	var r = 40;
+	var r = 100;
 
 	//console.log(angle);
 
 	//if(angle < 0.0 || angle > 180){
-		moonPos[0] = r * Math.cos(angle * Math.PI / 180);
-		moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
-		moonPos[2] = carZ + 100;
+	moonPos[0] = r * Math.cos(angle * Math.PI / 180);
+	moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
+	moonPos[2] = boatZ + 100;
 	//}
 	//console.log(moonPos);
 	return moonPos;
@@ -1305,13 +1304,21 @@ function moonPosition(hour){
 function drawScene() {
 	if (!errDetected) {
 		// compute time interval
-		// console.log('X: ' + carX);
-		// console.log('Z: ' + carZ);
-		//console.log("X: " + carX + " Z: " + carZ);
+		// console.log('X: ' + boatX);
+		// console.log('Z: ' + boatZ);
+		//console.log("X: " + boatX + " Z: " + boatZ);
 		gLightDir = HourToSunlight(TimeOfDay.value);
 		moonPos = moonPosition(TimeOfDay.value);
-		LampColor = parseColor(LampHex.value.substring(1,7));
-		LampDir = utils.multiplyMatrixVector(utils.MakeRotateYMatrix(carAngle),[0.0,0.0,-1.0,1.0]);
+		if (!PartyMode.checked) {
+			LampColor = parseColor(LampHex.value.substring(1, 7));
+		}
+		else {
+			var change = Math.random();
+			var color = Math.floor(Math.random() * 3);
+			PartyColor[color] = (PartyColor[color] + change) % 1.0;
+			LampColor = PartyColor;
+		}
+		LampDir = utils.multiplyMatrixVector(utils.MakeRotateYMatrix(boatAngle), [0.0, 0.0, -1.0, 1.0]);
 		LampColor[3] = 1.0;
 		//console.log(gLightDir[3])
 		var currentTime = (new Date).getTime();
@@ -1324,17 +1331,17 @@ function drawScene() {
 		lastUpdateTime = currentTime;
 
 		// compute time interval
-		//console.log('X: ' + carX);
-		//console.log('Z: ' + carZ);
+		//console.log('X: ' + boatX);
+		//console.log('Z: ' + boatZ);
 
 		// call user procedure for world-view-projection matrices
-		wvpMats = worldViewProjection(carX, carY, carZ, carAngle, cx, cy, cz);
+		wvpMats = worldViewProjection(boatX, boatY, boatZ, boatAngle, cx, cy, cz);
 		// the generated matrices (one world and 2 is projection) depend on the boat's position and direction, 
-		// the world is a rotation by CarDir degrees and translation over to the boat's coordinates
+		// the world is a rotation by boatDir degrees and translation over to the boat's coordinates
 
 		// //re align boat
 		// if(keys[37] == false){
-		// 	carAngle = carAngle*((lastUpdateTime+3000)-currentTime)
+		// 	boatAngle = boatAngle*((lastUpdateTime+3000)-currentTime)
 		// }
 
 		viewMatrix = wvpMats[1];
@@ -1344,46 +1351,46 @@ function drawScene() {
 		// dvecmat is actually the world matrix at the moment
 		dvecmat = wvpMats[0];
 
-		// computing car velocities
-		carAngVel = mAS * deltaT * rvy;
-		//console.log(carAngVel)
+		// computing boat velocities
+		boatAngVel = mAS * deltaT * rvy;
+		//console.log(boatAngVel)
 
 		vz = -vz;
 		// = 0.8 * deltaT * 60 * vz;
 		if (vz > 0.1) {
 			if (preVz > 0.1) {
-				carLinAcc = carLinAcc + ATur * deltaT;
+				boatLinAcc = boatLinAcc + ATur * deltaT;
 
-				if (carLinAcc > mAT) carLinAcc = mAT;
-			} else if (carLinAcc < sAT) carLinAcc = sAT;
+				if (boatLinAcc > mAT) boatLinAcc = mAT;
+			} else if (boatLinAcc < sAT) boatLinAcc = sAT;
 		} else if (vz > -0.1) {
-			carLinAcc = carLinAcc - ATdr * deltaT * Math.sign(carLinAcc);
-			if (Math.abs(carLinAcc) < 0.001) carLinAcc = 0.0;
+			boatLinAcc = boatLinAcc - ATdr * deltaT * Math.sign(boatLinAcc);
+			if (Math.abs(boatLinAcc) < 0.001) boatLinAcc = 0.0;
 		} else {
 			if (preVz < 0.1) {
-				carLinAcc = carLinAcc - BTur * deltaT;
-				if (carLinAcc < -mBT) carLinAcc = -mBT;
+				boatLinAcc = boatLinAcc - BTur * deltaT;
+				if (boatLinAcc < -mBT) boatLinAcc = -mBT;
 			}
-			else if (carLinAcc > -sBT) carLinAcc = -sBT;
+			else if (boatLinAcc > -sBT) boatLinAcc = -sBT;
 		}
 
 		preVz = vz;
 		vz = -vz;
-		carLinVel = carLinVel * Math.exp(Tfric * deltaT) - deltaT * carLinAcc;
+		boatLinVel = boatLinVel * Math.exp(Tfric * deltaT) - deltaT * boatLinAcc;
 
-		if (Math.abs(carLinVel) < 0.01 && !vz) {
-			carLinVel = 0.0;
+		if (Math.abs(boatLinVel) < 0.01 && !vz) {
+			boatLinVel = 0.0;
 		}
-		//console.log(carLinVel)
+		//console.log(boatLinVel)
 
-		// Magic for moving the car
+		// Magic for moving the boat
 		worldMatrix = utils.multiplyMatrices(dvecmat, utils.MakeScaleMatrix(1.0));
 		xaxis = [dvecmat[0], dvecmat[4], dvecmat[8]]; //axises transformed by the world matrix (boat position)
 		yaxis = [dvecmat[1], dvecmat[5], dvecmat[9]];
 		zaxis = [dvecmat[2], dvecmat[6], dvecmat[10]];
 
 		if (rvy != 0) {
-			qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(carAngVel));
+			qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(boatAngVel));
 			newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);  // New world matrix after the boat rotation has been computed according to angular speed
 			R11 = newDvecmat[10]; R12 = newDvecmat[8]; R13 = newDvecmat[9];
 			R21 = newDvecmat[2]; R22 = newDvecmat[0]; R23 = newDvecmat[1];
@@ -1407,18 +1414,18 @@ function drawScene() {
 			//elevation = theta/Math.PI*180;
 			//roll      = phi/Math.PI*180;
 			//angle     = psi/Math.PI*180;
-			carAngle = psi / Math.PI * 180;
+			boatAngle = psi / Math.PI * 180;
 
 			// max rotation angle is 90 counterclockwise
-			if (Math.round(parseFloat(carAngle)) > parseFloat(90.0)) {
-				carAngle = 90.0;
+			if (Math.round(parseFloat(boatAngle)) > parseFloat(90.0)) {
+				boatAngle = 90.0;
 			}
 
 			//max rotation angle is -90 clockwise
-			if (Math.round(parseFloat(carAngle)) < parseFloat(0.0 - 90.0)) {
-				carAngle = 0.0 - 90.0;
+			if (Math.round(parseFloat(boatAngle)) < parseFloat(0.0 - 90.0)) {
+				boatAngle = 0.0 - 90.0;
 			}
-			//console.log(carAngle);
+			//console.log(boatAngle);
 		}
 
 		// spring-camera system
@@ -1435,40 +1442,40 @@ function drawScene() {
 		cy += camVel[1] * deltaT;
 		cz += camVel[2] * deltaT;
 
-		// car motion
-		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, carLinVel, 0.0]);
+		// boat motion
+		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, boatLinVel, 0.0]);
 
 		//bound the boat with X > -100
 		// TODO: cambiare il limite a (lunghezza barca / 2 - 100)
-		if (carX - delta[0] < -100 && delta[0] > 0) {
-			delta[0] = 100.0 + carX;
+		if (boatX - delta[0] < -100 && delta[0] > 0) {
+			delta[0] = 100.0 + boatX;
 		}
 
 		// bound the boat with X < 100
 		// TODO: cambiare il limite a (100 - lunghezza barca / 2)
-		if (carX - delta[0] > 100 && delta[0] < 0) {
-			delta[0] = carX - 100.0;
+		if (boatX - delta[0] > 100 && delta[0] < 0) {
+			delta[0] = boatX - 100.0;
 		}
 
-		carX -= delta[0];
-		if (getHundreds(carZ) % 2 != 0 && getHundreds(carZ - delta[2]) % 2 == 0 && delta[2] < 0) {
+		boatX -= delta[0];
+		if (getHundreds(boatZ) % 2 != 0 && getHundreds(boatZ - delta[2]) % 2 == 0 && delta[2] < 0) {
 			newSector = true;
-			console.log(carZ);
+			console.log(boatZ);
 			console.log('uptick');
-			console.log(carZ - delta[2])
+			console.log(boatZ - delta[2])
 		}
 
-		carZ -= delta[2];
+		boatZ -= delta[2];
 
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
 
-		// if (Math.round(parseFloat(carX)) == Math.round(parseFloat(badX)) /*&& carZ == badZ*/) {
+		// if (Math.round(parseFloat(boatX)) == Math.round(parseFloat(badX)) /*&& boatZ == badZ*/) {
 		// 	console.log("X: " + badX + "\nZ: "  + "\n");
 		// 	console.log("LOST THE BOAT\n");
 		// 	window.location.reload(false);
 		// }
 		prepare_light();
-		
+
 		if (isStarting) {
 			isStarting = false;
 			startingRockBuffer();
@@ -1476,11 +1483,11 @@ function drawScene() {
 
 		if (newSector) {
 			newSector = false;
-			if (getHundreds(carZ) > 0) {
+			if (getHundreds(boatZ) > 0) {
 				// sono in una posizione multipla di 200
-				let isEven = ((getHundreds(carZ) / 2) % 2 == 0);
+				let isEven = ((getHundreds(boatZ) / 2) % 2 == 0);
 				let isSectionChanged = true;
-				let sectionNum = Math.floor(getHundreds(carZ) / 2);
+				let sectionNum = Math.floor(getHundreds(boatZ) / 2);
 				rockBuffer(isEven, isSectionChanged, sectionNum);
 
 			}
@@ -1508,7 +1515,7 @@ function drawScene() {
 		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
 		prepare_object_rendering(skyboxFront);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + boatZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 3);
@@ -1518,7 +1525,7 @@ function drawScene() {
 
 		prepare_object_rendering(skyboxBack);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 9);
@@ -1528,7 +1535,7 @@ function drawScene() {
 
 		prepare_object_rendering(skyboxLeft);
 		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 4);
@@ -1538,7 +1545,7 @@ function drawScene() {
 
 		prepare_object_rendering(skyboxRight);
 		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 5);
@@ -1547,7 +1554,7 @@ function drawScene() {
 		// draws the skybox top
 		prepare_object_rendering(skyboxTop);
 		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, boatZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 6);
@@ -1559,7 +1566,7 @@ function drawScene() {
 
 		prepare_object_rendering(skyboxBottom)
 		//translate the image of y: -230, scaled up by 200
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + boatZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 8);
@@ -1597,7 +1604,7 @@ function drawScene() {
 
 
 		// draws the ship
-		prepare_object_rendering(carMesh);
+		prepare_object_rendering(boatMesh);
 
 
 		// Aligning the ship
@@ -1606,13 +1613,13 @@ function drawScene() {
 
 		WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix), alignMatrix);
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(utils.multiplyMatrices(worldMatrix,alignMatrix)));
-		gl.uniformMatrix4fv(program.WMat,gl.FALSE,utils.transposeMatrix(utils.multiplyMatrices(worldMatrix,alignMatrix)));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(utils.multiplyMatrices(worldMatrix, alignMatrix)));
+		gl.uniformMatrix4fv(program.WMat, gl.FALSE, utils.transposeMatrix(utils.multiplyMatrices(worldMatrix, alignMatrix)));
 		gl.uniform1i(program.textureUniform, 0);
-		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.TRIANGLES, boatMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 		window.requestAnimationFrame(drawScene);
 
-		checkDeath(carX, carZ, carAngle);
+		checkDeath(boatX, boatZ, boatAngle);
 	}
 }
 
