@@ -5,8 +5,7 @@
 	<title>BOAT RUNNER | EQJ</title>
 	<script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
 	<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
-	<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css" />
-	<script src="WorldView.js"></script>
+	<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css"/>
 	<script src="lib/model.js"></script>
 	<script src="../helium_lib.js"></script>
 	<script src="lib/texture.js"></script>
@@ -34,27 +33,25 @@
 			<div style="font-family: 'Anonimous Pro', monospace; font-size: 150%; margin-bottom: 30px;">
 				Controls
 			</div>
-			<div style="margin-bottom: 30px;">
-				<div style="font-family: 'Anonimous Pro', monospace;">Select the daytime</div>
+			<div style="margin-bottom: 30px; display: flex; flex-direction: column;">
+				<label for="TimeOfDay" style="font-family: 'Anonimous Pro', monospace;">Select the daytime</label>
 				<input id="TimeOfDay" type="range" min="1" max="24" step="0.06" value="12">
 			</div>
 			<div style="margin-bottom: 30px; display: flex;">
-				<input type="checkbox" name="Lights" id="LampOn" style="margin-right: 20px;">
-				<div style="font-family: 'Anonimous Pro', monospace;">Boat light</div>
+				<input type="checkbox" name="Lights" id="LampOn">
+				<label for="Lights" style="font-family: 'Anonimous Pro', monospace;">Boat Light</label>
 			</div>
-			<div style="margin-bottom: 30px; display: flex;">
-				<input type="color" name="boat-light-color" id="LampHex" value="#FFFFFF" style="margin-right: 5px;">
-				<div style="font-family: 'Anonimous Pro', monospace;">
-					Boat light color
-				</div>
+			<div style="margin-bottom: 30px; display: flex; flex-direction: column;">
+				<label for="boat-light-color" style="font-family: 'Anonimous Pro', monospace;">Boat light color</label>
+				<input type="color" name="boat-light-color" id="LampHex" value="#FFFFFF">
 			</div>
-			<div style="margin-bottom: 30px; display: flex;">
-				<input type="checkbox" name="Lights" id="PartyMode" style="margin-right: 20px;">
-				<div style="font-family: 'Anonimous Pro', monospace;">Party Mode!</div>
+			<div style="margin-bottom: 30px;">
+				<input type="checkbox" name="Lights" id="PartyMode">
+				<label for="PartyMode" style="font-family: 'Anonimous Pro', monospace;">Party Mode!</label>
 			</div>
 			<div>
 				<input type="checkbox" name="music" id="music-start" onchange="letTheMusicFlow(this)">
-				<label for="music-start">Enable Music</label>
+				<label for="music-start" style="font-family: 'Anonimous Pro', monospace;">Enable Music</label>
 				<audio id="song-1" preload class="songs" src=".\lib\assets\music\1.mp3"></audio>
 
 				<audio id="song-2" preload class="songs" src=".\lib\assets\music\2.mp3"></audio>
@@ -67,23 +64,7 @@
 			</div>
 		</div>
 	</div>
-
-
-	<!-- <center>
-			<h1>Use the following keys to move the car</h1>
-			<table border="1">
-			  <tr>
-				<td>&nbsp;</td>
-				<td>Forward: <B>Up</B> Arrow</td>
-				<td>&nbsp;</td>
-			  </tr>
-			  <tr>
-				<td>Turn left: <B>Left</B> Arrow</td>
-				<td>Reverse: <B>Down</B> Arrow</td>
-				<td>turn right: <B>Right</B> Arrow</td>
-			  </tr>
-			</table>
-		</center> -->
+	
 	<div id="dialog1" title="Dialog Title" hidden="hidden">I'm a dialog</div>
 
 </body>

@@ -1,204 +1,308 @@
-
+/** Number of rocks to be generated */
 const numRocks = 50;
 
-var canvas;
+/** true if a rock has been hit, false otherwise */
 var errDetected = false;
-var gl = null,
-	program = null,
-	boatMesh = null,
-	rock1 = new Array(numRocks).fill(null),
-	rock2 = new Array(numRocks).fill(null),
-	skybox = null,
-	imgtx = null,
-	skyboxLattx = null,
-	skyboxTbtx = null;
-skyboxFrtx = null;
-skyboxTptx = null;
-skyboxLftx = null;
-skyboxRgtx = null;
-skyboxBktx = null;
-skyboxBttx = null;
-rocktx = null;
+
+/** webgl context */
+var gl = null;
+/** webgl program */
+var	program = null;
+/** meshes of the boat */
+var	boatMesh = null;
+/** mesh of the skybox */
+var	skybox = null;
+/** boat textures */
+var	imgtx = null;
+/** rock textures */
+var rocktx = null;
+
+// skybox textures
+var	skyboxLattx = null,
+	skyboxTbtx = null,
+	skyboxFrtx = null,
+	skyboxTptx = null,
+	skyboxLftx = null,
+	skyboxRgtx = null,
+	skyboxBktx = null,
+	skyboxBttx = null;
+
+/** scale factor for the boat model */
 var boatResize = 0.01;
+
+/** scale factor for the rock model */
 var rockResize = 1.5;
-var projectionMatrix,
-	perspectiveMatrix,
-	viewMatrix,
-	worldMatrix,
-	gLightDir,
-	moonPos,
-	orientLight;
-ambFactor = 1;
-LampColor = [0, 0, 0, 0];
-LampConeIn = 60;
-LampConeOut = 120;
-LampTarget = 20;
-LampDecay = 2;
 
+/*
+#############################
+##         MATRICES        ##
+#############################
+*/
 
-//Parameters for Camera
-var cx = 4.5;
-var cy = 5.0;
-var cz = 10.0;
-var elevation = 0.01;
-var angle = 0.01;
-var roll = 0.01;
+/** projectionMatrix; transform 3D points in screen points */
+var projectionMatrix;
+/** perspectiveMatrix; apply transformations for perspective */
+var	perspectiveMatrix;
+/** viewMatrix; transformation wrt camera */
+var	viewMatrix;
+/** worldMatrix; move the boat */
+var	worldMatrix;
 
-var boatAngle = 0;
-var boatX = -0.0;
-var boatY = -0.7;
-var boatZ = -67;
-var correctionFactor = 5;
-var correctionTime = 0;
-var newSector = false;
-var lookRadius = 10.0;
+/** Directional Ligth modeling the Sun */
+var	gLightDir;
+/** Position of the Moon */
+var	moonPos;
+/** Color of the cone light */
+var	LampColor = [0, 0, 0, 0];
+/** Size of the inner circle of the cone light */
+var	LampConeIn = 60;
+/** Size of the outer circle of the cone light */
+var	LampConeOut = 120;
+/** Distance where the light power of the cone light is 1 */
+var	LampTarget = 20;
+/** Decay factor of the cone light */
+var	LampDecay = 2;
+/** Position of the cone light */
 var LampPos;
+/** Direction of the cone light  */
 var LampDir = [0.0, 0.0, -1.0];
+/** Current color in partymode */
 var PartyColor = [0.0, 0.0, 0.0, 1.0];
 
+/*
+ *
+ * AXIS ANNOTATIONS:
+ * X -> HORIZONTAL; FROM 100 TO THE LEFT TO -100 TO THE RIGHT OF THE SCREEN
+ * Y -> VERTICAL;
+ * Z -> ENTRANT; FROM -100 TO +INF (main movement axis)
+ *  
+ */
+
+/*
+#############################
+##       CAMERA INIT       ##
+#############################
+*/
+
+/**
+ * X coordinate of the camera 
+ * @type number
+ */
+var cx = 4.5;
+/**
+ * Y coordinate of the camera 
+ * @type number
+ */
+var cy = 5.0;
+/**
+ * Z coordinate of the camera 
+ * @type number
+ */
+var cz = 10.0;
 
 
 
+/*
+#############################
+##        BOAT INIT        ##
+#############################
+*/
+/**
+ * Boat rotation on the Y axis in degrees
+ * @type number
+ */
+var boatAngle = 0;
+/**
+ * Boat center position along the X axis
+ * @type number
+ */
+var boatX = 0.0;
+/**
+ * Boat center position along the Y axis
+ */
+var boatY = -0.7;
+/**
+ * Boat center position along the Z axis
+ */
+var boatZ = -67;
+
+/*
+#############################
+##      EVENT HANDLER      ##
+#############################
+*/
+
+/** Speed of re-allignment of the boat in terms of angular speed */
+var correctionFactor = 5;
+
+/** Impose a waiting time after each reallignment step */
+var correctionTime = 0;
+
+/** set true every time the boat reach the 200.0Z milestone */
+var newSector = false;
+
+/** stores the current keys pressed */
 var keys = [];
 
-
+/** 
+ * Determine the movement of the boat along the Z axis, based on userInput.
+ * 
+ * @value -0.4 if the ArrowUp key is pressed
+ * @value 1.0 if the ArrowDown key is pressed, 
+ * @value 0.0 otherwise
+ */
 var vz = 0.0;
+
+/**
+ * Determine the movement of the boat along the X axis, based on userInput.
+ * 
+ * @value 1.0 if ArrowLeft is pressed
+ * @value -1.0 if ArrowRight is pressed
+ * @value 0.0 otherwise
+ */
 var rvy = 0.0;
 
+/**
+ * Compute the program reaction on key pressure of the user
+ * 
+ * @param {any} e Pressed key on the keyboard
+ */
 var keyFunctionDown = function (e) {
-	console.log('X:' + boatX);
+	// console.log('X:' + boatX);
 	// console.log('Y:' + boatY);
-	console.log('Z:' + boatZ);
+	// console.log('Z:' + boatZ);
 	if (!keys[e.keyCode]) {
 		keys[e.keyCode] = true;
 		switch (e.keyCode) {
-			case 37:
 
+			/* 
+			 * Mappings:
+			 * 37 -> ArrowLeft
+			 * 38 -> ArrowUp
+			 * 39 -> ArrowRight
+			 * 40 -> ArrowDown
+			 */
+
+			case 37:
 				rvy = rvy + 1.0;
 				//vz = vz-1;
 				break;
-			case 39:
 
+			case 39:
 				rvy = rvy - 1.0;
 				break;
-			case 38:
 
+			case 38:
 				vz = vz - 0.4;
 				break;
-			case 40:
 
+			case 40:
 				vz = vz + 1.0;
 				break;
 		}
 	}
 }
 
+/**
+ * Pause the execution for ms milliseconds
+ * 
+ * @param {number} ms time to sleep in millisecond
+ */
 function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Compute the program reaction on key release by the user
+ * 
+ * @param {any} e Released Key on the keyboard
+ */
 var keyFunctionUp = async function (e) {
-
 	var currentTime = (new Date).getTime();
-	var deltaT;
-	if (lastUpdateTime) {
-		deltaT = (currentTime - lastUpdateTime) / 1000.0;
-	} else {
-		deltaT = 1 / 50;
-	}
 	lastUpdateTime = currentTime;
 
 	if (keys[e.keyCode]) {
-		//console.log(boatAngle)
 		keys[e.keyCode] = false;
 		switch (e.keyCode) {
-			case 37:
 
+			/* 
+			 * Mappings:
+			 * 37 -> ArrowLeft
+			 * 38 -> ArrowUp
+			 * 39 -> ArrowRight
+			 * 40 -> ArrowDown
+			 */
+
+			case 37:
+				// Pressione su ArrowLeft terminata -> riallinea la barca 
 				rvy = rvy - 1.0;
-				//ruota la barca di boatAngle gradi indietro
-				//boatAngle;
+
 				var numberOfDelta;
+
 				if (boatAngle < 0) {
 					numberOfDelta = boatAngle * -correctionFactor;
-				}
-				else {
+				} else {
 					numberOfDelta = boatAngle * correctionFactor;
 				}
+
 				var deltaAngle = boatAngle / numberOfDelta;
-				//console.log(boatAngle)
+
 				for (var i = 0; i < numberOfDelta && !(rvy); i++) {
-
 					boatAngle = (boatAngle - deltaAngle);
-
-
 					await sleep(correctionTime / numberOfDelta);
 				}
+
 				if (Math.round(parseFloat(boatAngle)) == parseFloat(0.0) && !rvy) {
 					boatAngle = boatAngle - boatAngle;
 				}
-
-
-				//console.log("FINAL ANGLE (left): " + boatAngle);
-
-
-				// boatAngle = boatAngle-deltaAngle;
-				// await sleep(2000);
-
-				// boatAngle = boatAngle-deltaAngle;
-				// await sleep(2000);
-
-				// boatAngle = boatAngle-deltaAngle;
-
-				//rvy = rvy .0;
-
-
-				//vz = vz+1;
 				break;
-			case 39:
 
+			case 39:
+				// Pressione su ArrowRight terminata -> riallinea la barca 
 				rvy = rvy + 1.0;
 
 				var numberOfDelta;
+
 				if (boatAngle < 0) {
 					numberOfDelta = boatAngle * -correctionFactor;
-				}
-				else {
+				} else {
 					numberOfDelta = boatAngle * correctionFactor;
 				}
+
 				var deltaAngle = boatAngle / numberOfDelta;
-				//console.log(boatAngle)
+				
 				for (var i = 0; i < numberOfDelta && !(rvy); i++) {
-
 					boatAngle = (boatAngle - deltaAngle);
-					//console.log(boatAngle);
-
 					await sleep(correctionTime / numberOfDelta);
 				}
+
 				if (Math.round(parseFloat(boatAngle)) == parseFloat(0.0) && !rvy) {
 					boatAngle = boatAngle - boatAngle;
 				}
 
-				//boatAngle = 0.0;
-
-				//console.log("FINAL ANGLE (right): " + boatAngle);
-
 				break;
-			case 38:
 
+			case 38:
 				vz = vz + 0.4;
 				break;
-			case 40:
 
+			case 40:
 				vz = vz - 1.0;
 				break;
 		}
 	}
 }
 
+/** stores the html canvas element */
+var canvas;
+
+/** Store the dimension ratio of the canvas element. 
+ * @type number
+ */
 var aspectRatio;
 
+/** Re-compute the canvas dimensions and ratio between them */
 function doResize() {
-	// set canvas dimensions
 	var canvas = document.getElementById("my-canvas");
 	if ((window.innerWidth > 40) && (window.innerHeight > 240)) {
 		canvas.width = (window.innerWidth - 16) * 0.7;
@@ -246,6 +350,13 @@ function alert2(message, title, buttonText) {
 }
 
 
+/*
+#############################
+##         SHADERS         ##
+#############################
+*/
+
+//TODO: COMMENTARE ANCHE LE RIGHE DEGLI SHADER
 // Vertex shader
 var vs = `#version 300 es
 
@@ -302,7 +413,6 @@ uniform float LConeIn;
 uniform float LConeOut;
 uniform float LampTarget;
 uniform float LampDecay;
-//uniform float ambFact;
 
 
 out vec4 color;
@@ -322,40 +432,7 @@ void main() {
 	color = DayDiffuse + LampOn*LampDiffuse + MoonDiffuse;
 }`;
 
-// event handler
-var mouseState = false;
-var lastMouseX = -100, lastMouseY = -100;
-function doMouseDown(event) {
-	lastMouseX = event.pageX;
-	lastMouseY = event.pageY;
-	mouseState = true;
-}
-function doMouseUp(event) {
-	lastMouseX = -100;
-	lastMouseY = -100;
-	mouseState = false;
-}
-function doMouseMove(event) {
-	if (mouseState) {
-		var dx = event.pageX - lastMouseX;
-		var dy = lastMouseY - event.pageY;
-		lastMouseX = event.pageX;
-		lastMouseY = event.pageY;
-
-		if ((dx != 0) || (dy != 0)) {
-			angle = angle + 0.5 * dx;
-			elevation = elevation + 0.5 * dy;
-		}
-	}
-}
-function doMouseWheel(event) {
-	var nLookRadius = lookRadius + event.wheelDelta / 1000.0;
-	if ((nLookRadius > 2.0) && (nLookRadius < 20.0)) {
-		lookRadius = nLookRadius;
-	}
-}
-
-// texture loader callback
+/** texture loader callback */
 var textureLoaderCallback = function () {
 	var textureId = gl.createTexture();
 	gl.activeTexture(gl.TEXTURE0 + this.txNum);
@@ -368,15 +445,16 @@ var textureLoaderCallback = function () {
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
 }
 
-// The real app starts here
-function main() {
 
+/*
+#############################
+##          MAIN           ##
+#############################
+*/
+
+function main() {
 	// setup everything else
 	var canvas = document.getElementById("my-canvas");
-	canvas.addEventListener("mousedown", doMouseDown, false);
-	canvas.addEventListener("mouseup", doMouseUp, false);
-	canvas.addEventListener("mousemove", doMouseMove, false);
-	canvas.addEventListener("mousewheel", doMouseWheel, false);
 	window.addEventListener("keyup", keyFunctionUp, false);
 	window.addEventListener("keydown", keyFunctionDown, false);
 	window.onresize = doResize;
@@ -411,10 +489,9 @@ function main() {
 		gl.useProgram(program);
 
 		// Load mesh using the webgl-obj-loader library
-
 		boatMesh = new OBJ.Mesh(boatObjStr);
 		initRocks();
-		// rock[0] = new OBJ.Mesh(rockObjStr)
+		
 		skybox = new OBJ.Mesh(trackNfieldObjStr);
 		skybox2 = new OBJ.Mesh(trackNfieldObjStr);
 		skybox3 = new OBJ.Mesh(trackNfieldObjStr);
@@ -505,7 +582,7 @@ function main() {
 		program.LampTarget = gl.getUniformLocation(program, "LampTarget");
 		program.LampDecay = gl.getUniformLocation(program, "LampDecay");
 		program.moonPos = gl.getUniformLocation(program, "moonPos");
-		//		program.ambFact = gl.getUniformLocation(program, "ambFact");
+		
 		//OBJ.initMeshBuffers(gl, rock[0])
 		OBJ.initMeshBuffers(gl, boatMesh);
 		OBJ.initMeshBuffers(gl, skybox);
@@ -527,7 +604,7 @@ function main() {
 		gl.clearColor(0.0, 0.0, 0.0, 1.0);
 		gl.viewport(0.0, 0.0, w, h);
 
-		//		perspectiveMatrix = utils.MakePerspective(60, w/h, 0.1, 1000.0);
+		// perspectiveMatrix = utils.MakePerspective(60, w/h, 0.1, 1000.0);
 		aspectRatio = w / h;
 
 		// turn on depth testing
@@ -537,8 +614,6 @@ function main() {
 		// algin the skybox with the light
 		gLightDir = [1.0, 0.0, 0.0, 0.0];
 
-		orientLight = utils.multiplyMatrices(utils.MakeRotateZMatrix(-45), utils.MakeRotateYMatrix(180));
-		gLightDir = utils.multiplyMatrixVector(orientLight, gLightDir);
 		gLightDir = HourToSunlight(TimeOfDay.value);
 		initRock();
 		// generateRockPositions(0, 200, rocks1);
@@ -550,6 +625,8 @@ function main() {
 	}
 }
 
+
+//TODO: ALL THIS
 var lastUpdateTime;
 var camVel = [0, 0, 0];
 var fSk = 500.0;
@@ -577,6 +654,31 @@ var boatLinAcc = 0.0;
 var boatLinVel = 0.0;
 var boatAngVel = 0.0;
 var preVz = 0;
+
+/*
+#############################
+##         ROCKS           ##
+#############################
+*/
+
+/** Array containing all the meshes for the generated rocks */
+var rock1 = new Array(numRocks).fill(null);
+/** Array containing all the meshes for the generated rocks */
+var	rock2 = new Array(numRocks).fill(null);
+/** Contains all the X and Z positions of the generated rocks with (Z % 400) < 200 */
+var position1 = [];
+/** Contains all the rotations of the generated rocks with (Z % 400) < 200 */
+var rotation1 = [];
+/** Contains all the X and Z positions of the generated rocks with (Z % 400) > 200 */
+var position2 = [];
+/** Contains all the rotations of the generated rocks with (Z % 400) > 200 */
+var rotation2 = [];
+/** parameter to execute the first call of rock generation */
+var isStarting = true;
+/** 200x200 matrix mapping the positions of the rocks for direct access */
+var rocksCol1 = [];
+/** 200x200 matrix mapping the positions of the rocks for direct access */
+var rocksCol2 = [];
 
 /**
  * Function that generated X and Z coordinates of the rocks
@@ -622,6 +724,14 @@ function generateRockRotationOnMatrix(numElements, destMatrix, rocksPosition) {
 	return rockRot;
 }
 
+/**
+ * Draw the rocks in the world
+ * 
+ * @param {number[][]} rockPositionsArray Array containing the X and Z coordinate of the rocks
+ * @param {number[]} rockRotationsArray Array containing the rotation of the rock along Y
+ * @param {number} numElements Number of rock to draw
+ * @param {any} rocksArray Array containing the rock meshes
+ */
 function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocksArray) {
 	// var angleX = Math.floor(Math.random() * 360);
 	// var angleY = Math.floor(Math.random() * 360);
@@ -672,17 +782,8 @@ function initRocks() {
 	}
 }
 
-var position1 = [];
-var rotation1 = [];
-var position2 = [];
-var rotation2 = [];
-var isStarting = true;
-//var aRock;
-
-var rocksCol1 = [];
-var rocksCol2 = [];
-
-/** Function that initialize rock positions at the start of the game; this function MUST be called only once per game */
+/** Function that initialize rock positions at the start of the game; 
+ * this function MUST be called only once per game */
 function startingRockBuffer() {
 	isStarting = false;
 	position2 = generateRockPositionOnMatrix((1) * 200, (1) * 200 + 200, numRocks);
@@ -720,9 +821,7 @@ function rockBuffer(isEven, isSectionChanged, sectionNum) {
 
 }
 
-/**
- * Initialize square matrices for rocks
- */
+/** Initialize square matrices for rocks */
 function initRock() {
 	for (let i = 0; i < 200; i++) {
 		rocksCol1[i] = [];
@@ -735,25 +834,17 @@ function initRock() {
 }
 
 
-/**
- * @returns the distance between point A and point B in floating point format
- * @param {number} pointAX X coordinate of the first point
- * @param {number} pointAZ Z coordinate of the first point
- * @param {number} pointBX X coordinate of the second point
- * @param {number} pointBZ Z coordinate of the second point
- */
-function distance(pointAX, pointAZ, pointBX, pointBZ) {
-	return Math.sqrt(Math.pow(pointAX - pointBX, 2) + Math.pow(pointAZ - pointBZ, 2));
-}
+/*
+#############################
+##       COLLISIONS        ##
+#############################
+*/
 
-/**
- * Returns the hundreds contained in the numeric expression 
- * 
- * @param {number} number a numeric expression
- */
-function getHundreds(number) {
-	return Math.trunc(number / 100);
-}
+/** dimensions X and Z of the rock model without modifications */
+var rockBaseDimensions = [10.029, 5.886];
+
+/** dimensions X and Z of the boat model without modifications */
+var boatBaseDimensions = [1137.463, 240.86];
 
 /**
  * Perform the dot product of two segment in 2D-space
@@ -773,27 +864,6 @@ function dotProduct2D(firstVector, secondVector) {
 }
 
 /**
- * Function to perform a the projection of a point over an axis
- * 
- * @param {number} axisX X parameter of the axis
- * @param {number} axisZ Z parameter of the axis
- * @param {number} pointX X parametere of the point
- * @param {number} pointZ Z parameter of the point
- * @param {number} mainAxis main axis to perform the dot product
- * 
- * @returns the computed value
- */
-function project(axisX, axisZ, pointX, pointZ, mainAxis) {
-	// formula: (axisX * pointX + axisZ * pointZ) * mainAxis / (axisX^2 + axisZ^2)
-
-	var den = Math.pow(axisX, 2) + Math.pow(axisZ, 2);
-	var num = axisX * pointX + axisZ * pointZ;
-
-	return num * mainAxis / den;
-}
-
-
-/**
  * Compute the normalization of the provided 2D vector
  * 
  * @param {number} x X coordinate of the vector
@@ -808,18 +878,6 @@ function normalizeVector2D(x, z) {
 
 	return normalized;
 }
-
-/*
-#########################################
-##             COLLISIONS              ##
-#########################################
-*/
-
-/** dimensions X and Z of the rock model without modifications */
-var rockBaseDimensions = [10.029, 5.886];
-
-/** dimensions X and Z of the boat model without modifications */
-var boatBaseDimensions = [1137.463, 240.86];
 
 /**
  * build the list of verteces of a rectangle enclosing the boat
@@ -952,28 +1010,6 @@ function separatingAxisTheorem(boatVertices, rockVertices) {
 
 	for (let i = 0; i < axes.length; i++) {
 		const axis = normalizeVector2D(axes[i][0], axes[i][1]);
-
-		// var boatVertOnAxis = [
-		// 	(project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[0]) * axis[0] + 
-		// 		project(axis[0], axis[1], boatVertices[0][0], boatVertices[0][1], axis[1]) * axis[1]),
-		// 	(project(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[0]) * axis[0] +
-		// 		project(axis[0], axis[1], boatVertices[1][0], boatVertices[1][1], axis[1]) * axis[1]),
-		// 	(project(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[0]) * axis[0] +
-		// 		project(axis[0], axis[1], boatVertices[2][0], boatVertices[2][1], axis[1]) * axis[1]),
-		// 	(project(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[0]) * axis[0] +
-		// 		project(axis[0], axis[1], boatVertices[3][0], boatVertices[3][1], axis[1]) * axis[1])
-		// ];
-
-		// var rockVertOnAxis = [
-		// 	(project(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[0]) * axis[0] +
-		// 		project(axis[0], axis[1], rockVertices[0][0], rockVertices[0][1], axis[1]) * axis[1]),
-		// 	(project(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[0]) * axis[0] +
-		// 		project(axis[0], axis[1], rockVertices[1][0], rockVertices[1][1], axis[1]) * axis[1]),
-		// 	(project(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[0]) * axis[0] +
-		// 		project(axis[0], axis[1], rockVertices[2][0], rockVertices[2][1], axis[1]) * axis[1]),
-		// 	(project(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[0]) * axis[0] +
-		// 		project(axis[0], axis[1], rockVertices[3][0], rockVertices[3][1], axis[1]) * axis[1])
-		// ];
 
 		var boatVertOnAxis = [
 			(dotProduct2D(axis, boatVertices[0])),
@@ -1148,14 +1184,93 @@ function checkDeath(posX, posZ, angle) {
 	}
 }
 
+/*
+#############################
+##         LIGHTS          ##
+#############################
+*/
+
+/**
+ * Compute the position of the prow based on the rotation of the boat
+ * 
+ * @param {number} Yrotation rotation of the boat along Y axis
+ * 
+ * @returns the position of the prow (= prua) of the boat
+ */
 function get_boat_prow(Yrotation) {
 	var prowPos = (boatBaseDimensions[0] * boatResize) - 5;
 	var prowX = prowPos * Math.sin(get_angle(Yrotation));
 	var prowZ = prowPos * Math.cos(get_angle(Yrotation));
-	return [prowX, prowZ]
+
+	return [prowX, prowZ];
 }
 
+/**
+  * Compute the light vector generated by the Sun (directional light)
+  * 
+  * @param {number} hour Value indicating the hour of the day.
+  * 
+  * @returns {number[]} the computed light vector
+  */
+ function HourToSunlight(hour) {
+	var angle = (hour - 6.0) * 15.0;
+	var lightVec = [-1.0, 0.0, 0.0, 1.0];
 
+	if (angle >= 0.0 && angle <= 180) {
+		var ZRotation = utils.MakeRotateZMatrix(-angle);
+		lightVec = utils.multiplyMatrixVector(ZRotation, lightVec);
+	} else {
+		if (angle >= 350.0) {
+			lightVec[3] = 1.0 - utils.clamp((360.0 - angle) / 10.0, 0.0, 0.7)
+		} else {
+			if (angle > 180) {
+				lightVec[0] = 1.0;
+				lightVec[3] = 1.0 - utils.clamp((angle - 180.0) / 10.0, 0.0, 0.7)
+			} else {
+				lightVec[3] = 1.0 - utils.clamp((-angle) / 10.0, 0.0, 0.7)
+			}
+		}
+	}
+
+	return lightVec;
+}
+
+/**
+ * Compute the color from a provided string
+ * 
+ * @param {string} hexstring string value storing the RGB informations.
+ * 
+ * @returns {number[]} the computed RGB values.
+ */
+function parseColor(hexstring) {
+	var fullhex = hexstring.substring(0, 7);
+
+	R = parseInt(fullhex.substring(0, 2), 16) / 255;
+	G = parseInt(fullhex.substring(2, 4), 16) / 255;
+	B = parseInt(fullhex.substring(4, 6), 16) / 255;
+	return [R, G, B]
+}
+
+/**
+ * Computed the position of the Moon (point light).
+ * 
+ * @param {number} hour	Value indicating the hour of the day. 
+ * 
+ * @returns {number[]} moon Position in an array of 3 elements X, Y, Z.
+ */
+function moonPosition(hour) {
+	var moonPos = [1000.0, 0.0, 200];
+	var angle = (hour - 6.0) * 15.0;
+	var r = 100;
+
+	moonPos[0] = r * Math.cos(angle * Math.PI / 180);
+	moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
+	moonPos[2] = boatZ + 100;
+	
+	return moonPos;
+}
+
+/** Binds the light inside webgl shaders */
 function prepare_light() {
 	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], gLightDir[3]);
 	gl.uniform3f(program.moonPos, moonPos[0], moonPos[1], moonPos[2]);
@@ -1170,10 +1285,15 @@ function prepare_light() {
 	gl.uniform3f(program.LampPos, boatX + prowPos[0], boatY + 1, boatZ + prowPos[1]);
 }
 
+/*
+#############################
+##          MISC           ##
+#############################
+*/
+
 /**
  * Sets up the common pre-rendering calls for the passed object
  * @param {OBJ} object the object to be rendered
- * @param {number} light_mul a value from 0.0 to 1.0 determining how much ambient light to add
  */
 function prepare_object_rendering(object) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, object.vertexBuffer);
@@ -1205,6 +1325,15 @@ function generateTrack() {
 		gl.uniform1i(program.textureUniform, 1);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	}
+}
+
+/**
+ * Returns the hundreds contained in the numeric expression 
+ * 
+ * @param {number} number a numeric expression
+ */
+function getHundreds(number) {
+	return Math.trunc(number / 100);
 }
 
 /**
@@ -1241,86 +1370,77 @@ function floatComparison(num1, num2, cComparison) {
 }
 
 /**
+ * Compute the world, view and projection matrices for the game.
  * 
- * @param {number} hour 
- * @returns {array} light vector
+ * @param {number} boatX coordinate X of the boat
+ * @param {number} boatY coordinate Y of the boat
+ * @param {number} boatZ coordinate Z of the boat
+ * @param {number} boatDir angle wrt Y axis of the boat
+ * @param {number} camX coordinate X of the camera
+ * @param {number} camY coordinate Y of the camera
+ * @param {number} camZ coordinate Z of the camera
  */
-function HourToSunlight(hour) {
-	var angle = (hour - 6.0) * 15.0;
-	var lightVec = [-1.0, 0.0, 0.0, 1.0];
-	if (angle >= 0.0 && angle <= 180) {
-		var ZRotation = utils.MakeRotateZMatrix(-angle);
-		lightVec = utils.multiplyMatrixVector(ZRotation, lightVec);
-	}
-	else {
-		if (angle >= 350.0) {
-			lightVec[3] = 1.0 - utils.clamp((360.0 - angle) / 10.0, 0.0, 0.7)
-		}
-		else {
-			if (angle > 180) {
-				lightVec[0] = 1.0;
-				lightVec[3] = 1.0 - utils.clamp((angle - 180.0) / 10.0, 0.0, 0.7)
-			}
-			else {
-				lightVec[3] = 1.0 - utils.clamp((-angle) / 10.0, 0.0, 0.7)
-			}
-		}
-	}
+function worldViewProjection(boatX, boatY, boatZ, boatDir, camX, camY, camZ) {
+	var world = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+	var view = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
 
-	//	console.log(lightVec)
-	return lightVec;
+	var V_z = [camX - boatX, camY - boatY, camZ - boatZ];
+
+	V_z = utils.normalizeVector3(V_z);
+
+	var u = [0, 1, 0];
+
+	var V_x = utils.crossVector(u, V_z);
+
+	V_x = utils.normalizeVector3(V_x);
+
+	var V_y = utils.crossVector(V_z, V_x);
+
+	var M_c = [
+		V_x[0], V_y[0], V_z[0], camX,
+		V_x[1], V_y[1], V_z[1], camY,
+		V_x[2], V_y[2], V_z[2], camZ,
+		0, 0, 0, 1
+	];
+
+	view = utils.invertMatrix(M_c);
+
+	var R = utils.MakeRotateYMatrix(boatDir);
+	var T = utils.MakeTranslateMatrix(boatX, boatY, boatZ);
+
+	world = utils.multiplyMatrices(R, world);
+	world = utils.multiplyMatrices(T, world);
+	return [world, view];
 }
 
-function parseColor(hexstring) {
-	var fullhex = hexstring.substring(0, 7);
-	R = parseInt(fullhex.substring(0, 2), 16) / 255;
-	G = parseInt(fullhex.substring(2, 4), 16) / 255;
-	B = parseInt(fullhex.substring(4, 6), 16) / 255;
-	return [R, G, B]
-}
+
+/*
+#############################
+##          DRAW           ##
+#############################
+*/
 
 /**
- * 
- * @param {number} hour 
- * @returns {array} moon Position in an array of 3 elements X, Y, Z.
+ * Handles all the drawings in the world space
  */
-function moonPosition(hour) {
-	var moonPos = [1000.0, 0.0, 200];
-	var angle = (hour - 6.0) * 15.0;
-	var r = 100;
-
-	//console.log(angle);
-
-	//if(angle < 0.0 || angle > 180){
-	moonPos[0] = r * Math.cos(angle * Math.PI / 180);
-	moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
-	moonPos[2] = boatZ + 100;
-	//}
-	//console.log(moonPos);
-	return moonPos;
-}
-
-
 function drawScene() {
 	if (!errDetected) {
-		// compute time interval
-		// console.log('X: ' + boatX);
-		// console.log('Z: ' + boatZ);
-		//console.log("X: " + boatX + " Z: " + boatZ);
 		gLightDir = HourToSunlight(TimeOfDay.value);
 		moonPos = moonPosition(TimeOfDay.value);
+
 		if (!PartyMode.checked) {
 			LampColor = parseColor(LampHex.value.substring(1, 7));
-		}
-		else {
+		} else {
 			var change = Math.random();
 			var color = Math.floor(Math.random() * 3);
 			PartyColor[color] = (PartyColor[color] + change) % 1.0;
 			LampColor = PartyColor;
 		}
+
 		LampDir = utils.multiplyMatrixVector(utils.MakeRotateYMatrix(boatAngle), [0.0, 0.0, -1.0, 1.0]);
 		LampColor[3] = 1.0;
-		//console.log(gLightDir[3])
+		
+		// compute time interval
 		var currentTime = (new Date).getTime();
 		var deltaT;
 		if (lastUpdateTime) {
@@ -1330,31 +1450,21 @@ function drawScene() {
 		}
 		lastUpdateTime = currentTime;
 
-		// compute time interval
-		//console.log('X: ' + boatX);
-		//console.log('Z: ' + boatZ);
-
-		// call user procedure for world-view-projection matrices
-		wvpMats = worldViewProjection(boatX, boatY, boatZ, boatAngle, cx, cy, cz);
-		// the generated matrices (one world and 2 is projection) depend on the boat's position and direction, 
+		// the generated matrices depend on the boat's position and direction, 
 		// the world is a rotation by boatDir degrees and translation over to the boat's coordinates
-
-		// //re align boat
-		// if(keys[37] == false){
-		// 	boatAngle = boatAngle*((lastUpdateTime+3000)-currentTime)
-		// }
-
+		wvpMats = worldViewProjection(boatX, boatY, boatZ, boatAngle, cx, cy, cz);
+		
 		viewMatrix = wvpMats[1];
 
 		perspectiveMatrix = projection = utils.MakePerspective(60, aspectRatio, 0.1, 2000.0);
 
-		// dvecmat is actually the world matrix at the moment
+		// dvecmat is actually the world matrix
 		dvecmat = wvpMats[0];
 
 		// computing boat velocities
 		boatAngVel = mAS * deltaT * rvy;
-		//console.log(boatAngVel)
 
+		//  TODO: enrich the description here
 		vz = -vz;
 		// = 0.8 * deltaT * 60 * vz;
 		if (vz > 0.1) {
@@ -1381,17 +1491,20 @@ function drawScene() {
 		if (Math.abs(boatLinVel) < 0.01 && !vz) {
 			boatLinVel = 0.0;
 		}
-		//console.log(boatLinVel)
 
 		// Magic for moving the boat
 		worldMatrix = utils.multiplyMatrices(dvecmat, utils.MakeScaleMatrix(1.0));
-		xaxis = [dvecmat[0], dvecmat[4], dvecmat[8]]; //axises transformed by the world matrix (boat position)
+
+		//axises transformed by the world matrix (boat position)
+		xaxis = [dvecmat[0], dvecmat[4], dvecmat[8]]; 
 		yaxis = [dvecmat[1], dvecmat[5], dvecmat[9]];
 		zaxis = [dvecmat[2], dvecmat[6], dvecmat[10]];
 
 		if (rvy != 0) {
 			qy = Quaternion.fromAxisAngle(yaxis, utils.degToRad(boatAngVel));
-			newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);  // New world matrix after the boat rotation has been computed according to angular speed
+
+			// New world matrix after the boat rotation has been computed according to angular speed
+			newDvecmat = utils.multiplyMatrices(qy.toMatrix4(), dvecmat);
 			R11 = newDvecmat[10]; R12 = newDvecmat[8]; R13 = newDvecmat[9];
 			R21 = newDvecmat[2]; R22 = newDvecmat[0]; R23 = newDvecmat[1];
 			R31 = newDvecmat[6]; R32 = newDvecmat[4]; R33 = newDvecmat[5];
@@ -1411,9 +1524,7 @@ function drawScene() {
 					psi = Math.atan2(-R12, -R13) - phi;
 				}
 			}
-			//elevation = theta/Math.PI*180;
-			//roll      = phi/Math.PI*180;
-			//angle     = psi/Math.PI*180;
+			
 			boatAngle = psi / Math.PI * 180;
 
 			// max rotation angle is 90 counterclockwise
@@ -1425,7 +1536,6 @@ function drawScene() {
 			if (Math.round(parseFloat(boatAngle)) < parseFloat(0.0 - 90.0)) {
 				boatAngle = 0.0 - 90.0;
 			}
-			//console.log(boatAngle);
 		}
 
 		// spring-camera system
@@ -1446,13 +1556,11 @@ function drawScene() {
 		delta = utils.multiplyMatrixVector(dvecmat, [0, 0, boatLinVel, 0.0]);
 
 		//bound the boat with X > -100
-		// TODO: cambiare il limite a (lunghezza barca / 2 - 100)
 		if (boatX - delta[0] < -100 && delta[0] > 0) {
 			delta[0] = 100.0 + boatX;
 		}
 
 		// bound the boat with X < 100
-		// TODO: cambiare il limite a (100 - lunghezza barca / 2)
 		if (boatX - delta[0] > 100 && delta[0] < 0) {
 			delta[0] = boatX - 100.0;
 		}
@@ -1460,22 +1568,15 @@ function drawScene() {
 		boatX -= delta[0];
 		if (getHundreds(boatZ) % 2 != 0 && getHundreds(boatZ - delta[2]) % 2 == 0 && delta[2] < 0) {
 			newSector = true;
-			console.log(boatZ);
-			console.log('uptick');
-			console.log(boatZ - delta[2])
 		}
 
 		boatZ -= delta[2];
 
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
 
-		// if (Math.round(parseFloat(boatX)) == Math.round(parseFloat(badX)) /*&& boatZ == badZ*/) {
-		// 	console.log("X: " + badX + "\nZ: "  + "\n");
-		// 	console.log("LOST THE BOAT\n");
-		// 	window.location.reload(false);
-		// }
 		prepare_light();
 
+		// draw rocks
 		if (isStarting) {
 			isStarting = false;
 			startingRockBuffer();
@@ -1492,28 +1593,15 @@ function drawScene() {
 
 			}
 		} else {
-			// non sono in una posizione multipla di 200
 			rockBuffer(null, false, null);
-			// se non (sono in una posizione multipla di 200 e sto ananzando)
-			// delta e' negativa se avanzo, positiva se indietreggio
 		}
 
 		// draws the track
-		//gl.uniform1i(program.textureUniform, 1);
-		//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 		generateTrack();
 
 		// draws the skybox front
-
-		//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.vertexBuffer);
-		//gl.vertexAttribPointer(program.vertexPositionAttribute, skyboxFront.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.textureBuffer);
-		//gl.vertexAttribPointer(program.textureCoordAttribute, skyboxFront.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		//gl.bindBuffer(gl.ARRAY_BUFFER, skyboxFront.normalBuffer);
-		//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
-		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
 		prepare_object_rendering(skyboxFront);
+
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + boatZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1522,7 +1610,6 @@ function drawScene() {
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 		// draws the skybox back
-
 		prepare_object_rendering(skyboxBack);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
@@ -1532,7 +1619,6 @@ function drawScene() {
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 		// draws the skybox right of ship (left world)
-
 		prepare_object_rendering(skyboxLeft);
 		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
@@ -1542,7 +1628,6 @@ function drawScene() {
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 		// draws the skybox left of ship (right world)
-
 		prepare_object_rendering(skyboxRight);
 		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
@@ -1562,8 +1647,6 @@ function drawScene() {
 
 
 		// draws the skybox bottom
-
-
 		prepare_object_rendering(skyboxBottom)
 		//translate the image of y: -230, scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + boatZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
@@ -1571,37 +1654,6 @@ function drawScene() {
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 8);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
-
-		// // draws the rock
-		// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].vertexBuffer);
-		// gl.vertexAttribPointer(program.vertexPositionAttribute, rock[0].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-		// gl.bindBuffer(gl.ARRAY_BUFFER, rock[0].textureBuffer);
-		// gl.vertexAttribPointer(program.textureCoordAttribute, rock[0].textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-		// gl.bindBuffer(gl.ARRAY_BUFFER, rock.normalBuffer);
-		// gl.vertexAttribPointer(program.vertexNormalAttribute, rock[0].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-
-		// gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rock[0].indexBuffer);		
-
-		// gl.uniform1i(program.textureUniform, 7);
-		// gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 0.2);
-
-		// // Aligning the Rock
-		// var alignMatrix = utils.MakeScaleMatrix(1.5);
-		// alignMatrix = utils.multiplyMatrices(alignMatrix,utils.MakeRotateYMatrix(90));
-
-		// var rockx = 0;
-		// var rocky = 0;
-		// var rockz = 56;
-		// WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.MakeTranslateMatrix(rockx,rocky,rockz));
-		// gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-		// gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(worldMatrix));
-		// gl.drawElements(gl.TRIANGLES, rock[0].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
-
-
-		//generateRock();
-
 
 		// draws the ship
 		prepare_object_rendering(boatMesh);
@@ -1622,4 +1674,3 @@ function drawScene() {
 		checkDeath(boatX, boatZ, boatAngle);
 	}
 }
-
