@@ -1,5 +1,5 @@
 var audioArrayElements = document.getElementsByClassName("songs");
-var lastPlayed = 0;
+var lastPlayed =  Math.floor(Math.random() * 5);
 var audioArraySrc = [];
 
 /*

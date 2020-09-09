@@ -30,11 +30,13 @@ var projectionMatrix,
 	orientLight;
 	ambFactor = 1;
 	LampColor = [0,0,0,0];
-	LampConeIn = 80;
-	LampConeOut = 10;
-	LampTarget = 10;
-	LampDecay = 0;
+	LampConeIn = 60;
+	LampConeOut = 120;
+	LampTarget = 20;
+	LampDecay = 2;
 
+//DELETE ME
+var ppx=0.0,ppy=0.0,ppz=0.0, ppdir = 0.0,ppan = 0.0;
 
 //Parameters for Camera
 var cx = 4.5;
@@ -52,8 +54,8 @@ var correctionFactor =5;
 var correctionTime = 0;
 var newSector = false;
 var lookRadius = 10.0;
-var LampPos = [carX,carY+100,carZ+20];
-var	LampDir = utils.normalizeVector3([0.0,1.0,-1.0]);
+var LampPos;
+var	LampDir = [0.0,0.0,-1.0];
 
 
 
@@ -247,6 +249,7 @@ function alert2(message, title, buttonText) {
 		
 // Vertex shader
 var vs = `#version 300 es
+
 #define POSITION_LOCATION 0
 #define NORMAL_LOCATION 1
 #define UV_LOCATION 2
@@ -257,25 +260,26 @@ layout(location = UV_LOCATION) in vec2 in_uv;
 
 uniform mat4 pMatrix;
 uniform mat4 nMatrix;
+uniform mat4 WMat;
 uniform vec3 moonPos;
-uniform vec3 LampPos;
+
 
 out vec3 fs_pos;
 out vec3 fs_norm;
 out vec2 fs_uv;
 out vec3 moonDir;
-out vec3 ToLampDir;
-out float LampDist;
+out float moonDist;
+out vec4 realPos;
 
 void main() {
-	fs_pos = in_pos;
+	
 	fs_norm = (nMatrix * vec4(in_norm, 0.0)).xyz;
 	fs_uv = vec2(in_uv.x, 1.0-in_uv.y);
-	moonDir = normalize(moonPos-fs_pos);
-	ToLampDir = normalize(LampPos - fs_pos);
-	LampDist = distance(LampPos,fs_pos);
+	fs_pos = (WMat * vec4(in_pos, 1.0)).xyz;
+	moonDir = normalize(moonPos - fs_pos);
+	moonDist = distance(moonPos,fs_pos);
 
-	gl_Position = pMatrix * vec4(in_pos, 1.0);
+	gl_Position = (pMatrix * vec4(in_pos, 1.0));
 }`;
 
 // Fragment shader
@@ -285,15 +289,15 @@ precision highp float;
 in vec3 fs_pos;
 in vec3 fs_norm;
 in vec2 fs_uv;
-
+in vec4 realPos;
 in vec3 moonDir;
-in float LampDist;
-in vec3 ToLampDir;
+in float moonDist;
 
 uniform float LampOn;
 uniform sampler2D u_texture;
 uniform vec4 lightDir;
 uniform vec4 LampCol;
+uniform vec3 LampPos;
 uniform vec3 LampDir;
 uniform float LConeIn;
 uniform float LConeOut;
@@ -305,17 +309,21 @@ uniform float LampDecay;
 out vec4 color;
 
 void main() {
-	float MoonFact  = clamp(dot(normalize(fs_norm), moonDir),0.0,1.0);
 	vec4 texcol = texture(u_texture, fs_uv);
-	vec4 LampColorFinal = LampCol * pow( LampTarget / LampDist,LampDecay) * clamp( ( dot(ToLampDir,LampDir) - cos(radians(LConeOut)) ) / cos(radians(LConeIn * LConeOut)),0.0,1.0);
+	float LampDist = distance(LampPos,fs_pos);
+	vec3 ToLampDir = normalize(LampPos - fs_pos); 
+	vec4 LampLight = LampCol * pow(LampTarget / LampDist,LampDecay) * clamp(  dot(LampDir,ToLampDir) - cos(radians(LConeOut) ) / ( cos(radians(LConeIn)) - cos(radians(LConeOut)) ) , 0.0,1.0 ) * texcol;
+	//LampLight = LampCol * pow(LampTarget / LampDist,LampDecay) *texcol;
+	vec4 LampDiffuse  = LampLight * clamp( dot( ToLampDir,normalize(fs_norm) ), 0.0, 1.0 );
+	vec4 MoonCol = vec4(1.0,1.0,1.0,1.0) * pow(50.0/moonDist,1.0) * texcol;
+	vec4 MoonDiffuse  = MoonCol * clamp(dot(normalize(fs_norm), moonDir),0.0,1.0);
 	float dimFact = clamp(lightDir.w * dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
-	vec4 LampDiffuse = vec4(LampColorFinal.xyz * clamp(dot(normalize(fs_norm),LampDir),0.0,1.0) * texcol.xyz,1.0);
 	vec4 DayDiffuse = vec4(clamp(texcol.rgb * dimFact,0.0,1.0),1);
-	color = vec4(clamp((DayDiffuse.xyz/10.0) + LampDiffuse.xyz,0.0,1.0),1.0) ;
+	color = vec4(clamp((DayDiffuse.xyz/5.0) + LampLight.xyz,0.0,1.0),1.0);
+	color = DayDiffuse + LampOn*LampDiffuse + MoonDiffuse;
 }`;
 
 // event handler
-
 var mouseState = false;
 var lastMouseX = -100, lastMouseY = -100;
 function doMouseDown(event) {
@@ -485,6 +493,7 @@ function main(){
 
 		program.WVPmatrixUniform = gl.getUniformLocation(program, "pMatrix");
 		program.NmatrixUniform = gl.getUniformLocation(program, "nMatrix");
+		program.WMat = gl.getUniformLocation(program, "WMat");
 		program.textureUniform = gl.getUniformLocation(program, "u_texture");
 		program.lightDir = gl.getUniformLocation(program, "lightDir");
 		// adding cusotm lights
@@ -623,6 +632,7 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 
 	for(i=0; i < numElements; i++){
 		// draws the rock
+		/*
 		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].vertexBuffer);
 		gl.vertexAttribPointer(program.vertexPositionAttribute, rocksArray[i].vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
 		gl.bindBuffer(gl.ARRAY_BUFFER, rocksArray[i].textureBuffer);
@@ -632,20 +642,21 @@ function generateRock(rockPositionsArray, rockRotationsArray, numElements, rocks
 		gl.vertexAttribPointer(program.vertexNormalAttribute, rocksArray[i].normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 			
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rocksArray[i].indexBuffer);		
-
+		*/
+		prepare_object_rendering(rocksArray[i])
 		gl.uniform1i(program.textureUniform, 7);
-		gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], gLightDir[3]);
+		//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], gLightDir[3]);
 
 
-		var alignMatrix = utils.MakeScaleMatrix(rockResize);
-		alignMatrix = utils.multiplyMatrices(utils.MakeRotateYMatrix(rockRotationsArray[i]),alignMatrix);
+		var	rockTrans = utils.MakeScaleMatrix(rockResize);
+		rockTrans = utils.multiplyMatrices(utils.MakeRotateYMatrix(rockRotationsArray[i]),rockTrans);
 		var rockx = rockPositionsArray[i][0];
 		var rocky = 0;
 		var rockz = rockPositionsArray[i][1];
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),alignMatrix));
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),rockTrans));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));		
-
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.MakeRotateYMatrix(-rockRotationsArray[i]));
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE,utils.transposeMatrix(utils.invertMatrix(utils.transposeMatrix(rockTrans))));
+		gl.uniformMatrix4fv(program.WMat,gl.FALSE,utils.transposeMatrix(utils.multiplyMatrices(utils.MakeTranslateMatrix(rockx,rocky,rockz),rockTrans)));	
 		gl.drawElements(gl.TRIANGLES, rocksArray[i].indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 
 	}
@@ -1046,7 +1057,7 @@ function moonPosition(hour){
 	//console.log(angle);
 
 	//if(angle < 0.0 || angle > 180){
-		moonPos[0] = r * Math.cos(angle * Math.PI / 180);
+		moonPos[0] = -r * Math.cos(angle * Math.PI / 180);
 		moonPos[1] = -r * Math.sin(angle * Math.PI / 180);
 		moonPos[2] = carZ + 100;
 	//}
@@ -1148,20 +1159,17 @@ function checkDeath(posX, posZ, angle) {
 	}
 }
 
+function get_boat_prow(Yrotation){
+	var prowPos = (boatBaseDimensions[0] *boatResize)-5;
+	var prowX = prowPos * Math.sin(get_angle(Yrotation));
+	var prowZ = prowPos * Math.cos(get_angle(Yrotation));
+	return [prowX,prowZ]
+}
 
-/**
- * Sets up the common pre-rendering calls for the passed object
- * @param {OBJ} object the object to be rendered
- * @param {number} light_mul a value from 0.0 to 1.0 determining how much ambient light to add
- */
-function prepare_object_rendering(object,light_mul){
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.vertexBuffer);
-	gl.vertexAttribPointer(program.vertexPositionAttribute, object.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.textureBuffer);
-    gl.vertexAttribPointer(program.textureCoordAttribute, object.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	gl.bindBuffer(gl.ARRAY_BUFFER, object.normalBuffer);
-	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
-	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], light_mul);
+
+function prepare_light(){
+	gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], gLightDir[3]);
+	gl.uniform3f(program.moonPos,moonPos[0],moonPos[1],moonPos[2]);
 	gl.uniform1f(program.LampOn, LampOn.checked);
 	gl.uniform4f(program.LampColor,LampColor[0],LampColor[1],LampColor[2],LampColor[3]);
 	gl.uniform1f(program.LampConeIn,LampConeIn);
@@ -1169,8 +1177,22 @@ function prepare_object_rendering(object,light_mul){
 	gl.uniform1f(program.LampConeOut,LampConeOut);
 	gl.uniform1f(program.LampTarget,LampTarget);
 	gl.uniform1f(program.LampDecay, LampDecay);
-	gl.uniform3f(program.LampPos,LampPos[0],LampPos[1],LampPos[2]);
-	gl.uniform3f(program.moonPos,moonPos[0],moonPos[1],moonPos[2]);
+	let prowPos = get_boat_prow(carAngle);
+	gl.uniform3f(program.LampPos,carX + prowPos[0],carY+1,carZ+prowPos[1]);
+}
+
+/**
+ * Sets up the common pre-rendering calls for the passed object
+ * @param {OBJ} object the object to be rendered
+ * @param {number} light_mul a value from 0.0 to 1.0 determining how much ambient light to add
+ */
+function prepare_object_rendering(object){
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.vertexBuffer);
+	gl.vertexAttribPointer(program.vertexPositionAttribute, object.vertexBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.textureBuffer);
+    gl.vertexAttribPointer(program.textureCoordAttribute, object.textureBuffer.itemSize, gl.FLOAT, false, 0, 0);
+	gl.bindBuffer(gl.ARRAY_BUFFER, object.normalBuffer);
+	gl.vertexAttribPointer(program.vertexNormalAttribute, object.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, object.indexBuffer);
 }
 
@@ -1184,12 +1206,13 @@ function generateTrack(){
 	if(carZ > trackZpos[0] + 150){
 		trackZpos = [trackZpos[1],trackZpos[2],trackZpos[2]+200]
 	}
-
 	for(var i = 0; i<3;i++){
-		prepare_object_rendering(skybox,gLightDir[3]);
-		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale)));
+		prepare_object_rendering(skybox);
+		var scaleMat = utils.MakeScaleNuMatrix(trackScale,trackScale,trackScale);
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix,utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), scaleMat));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(utils.invertMatrix(utils.transposeMatrix(scaleMat))));
+		gl.uniformMatrix4fv(program.WMat,gl.FALSE,utils.transposeMatrix(utils.multiplyMatrices(utils.MakeTranslateMatrix(0,0,trackZpos[i]), scaleMat)));
 		gl.uniform1i(program.textureUniform, 1);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 	}
@@ -1237,8 +1260,8 @@ function drawScene() {
 		gLightDir = HourToSunlight(TimeOfDay.value);
 		moonPos = moonPosition(TimeOfDay.value);
 		LampColor = parseColor(LampHex.value.substring(1,7));
+		LampDir = utils.multiplyMatrixVector(utils.MakeRotateYMatrix(carAngle),[0.0,0.0,-1.0,1.0]);
 		LampColor[3] = 1.0;
-		LampPos = [carX,carY+10,carZ]
 		//console.log(gLightDir[3])
 		var currentTime = (new Date).getTime();
 		var deltaT;
@@ -1393,7 +1416,8 @@ function drawScene() {
 		// 	console.log("LOST THE BOAT\n");
 		// 	window.location.reload(false);
 		// }
-
+		prepare_light();
+		
 		if (isStarting) {
 			isStarting = false;
 			startingRockBuffer();
@@ -1416,8 +1440,8 @@ function drawScene() {
 			// delta e' negativa se avanzo, positiva se indietreggio
 		}
 
-		//checkDeath(carX, carZ, carAngle);
-
+		checkDeath(carX, carZ, carAngle);
+		
 		// draws the track
 		//gl.uniform1i(program.textureUniform, 1);
 		//gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
@@ -1433,7 +1457,7 @@ function drawScene() {
 		//gl.vertexAttribPointer(program.vertexNormalAttribute, skyboxFront.normalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 		//gl.uniform4f(program.lightDir, gLightDir[0], gLightDir[1], gLightDir[2], 1.0);
 		//gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyboxFront.indexBuffer);
-		prepare_object_rendering(skyboxFront, gLightDir[3]);
+		prepare_object_rendering(skyboxFront);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1443,7 +1467,7 @@ function drawScene() {
 
 		// draws the skybox back
 
-		prepare_object_rendering(skyboxBack, gLightDir[3]);
+		prepare_object_rendering(skyboxBack);
 		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1453,7 +1477,7 @@ function drawScene() {
 
 		// draws the skybox right of ship (left world)
 
-		prepare_object_rendering(skyboxLeft, gLightDir[3]);
+		prepare_object_rendering(skyboxLeft);
 		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1463,7 +1487,7 @@ function drawScene() {
 
 		// draws the skybox left of ship (right world)
 
-		prepare_object_rendering(skyboxRight, gLightDir[3]);
+		prepare_object_rendering(skyboxRight);
 		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + carZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1472,7 +1496,7 @@ function drawScene() {
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
 
 		// draws the skybox top
-		prepare_object_rendering(skyboxTop, gLightDir[3]);
+		prepare_object_rendering(skyboxTop);
 		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 170, carZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1484,7 +1508,7 @@ function drawScene() {
 		// draws the skybox bottom
 
 
-		prepare_object_rendering(skyboxBottom, gLightDir[3])
+		prepare_object_rendering(skyboxBottom)
 		//translate the image of y: -230, scaled up by 200
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + carZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
@@ -1524,7 +1548,7 @@ function drawScene() {
 
 
 		// draws the ship
-		prepare_object_rendering(carMesh, gLightDir[3]);
+		prepare_object_rendering(carMesh);
 
 
 		// Aligning the ship
@@ -1534,6 +1558,7 @@ function drawScene() {
 		WVPmatrix = utils.multiplyMatrices(utils.multiplyMatrices(projectionMatrix, worldMatrix), alignMatrix);
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(utils.multiplyMatrices(worldMatrix,alignMatrix)));
+		gl.uniformMatrix4fv(program.WMat,gl.FALSE,utils.transposeMatrix(utils.multiplyMatrices(worldMatrix,alignMatrix)));
 		gl.uniform1i(program.textureUniform, 0);
 		gl.drawElements(gl.TRIANGLES, carMesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 		window.requestAnimationFrame(drawScene);
