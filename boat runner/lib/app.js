@@ -1298,6 +1298,23 @@ function prepare_object_rendering(object) {
 }
 
 /**
+ * Renders a chunk of the skybox (one panel), given parameters
+ * 
+ * @param {number} x translation over x
+ * @param {number} y translation over y
+ * @param {number} z translation over z
+ * @param {number} xrot rotation around x axis
+ * @param {number} yrot rotation around y axis
+ * @param {number} texture_id number indicating texture to be loaded
+ */
+function render_skybox(x,y,z,xrot,yrot,texture_id){
+		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(x,y,z),utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(yrot),utils.MakeRotateXMatrix(xrot)),utils.MakeScaleMatrix(skyboxScale))))
+		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
+		gl.uniform1i(program.textureUniform, texture_id);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+}
+
+/**
  * Generates the track elements on which the boat rides.
  * It is also responsible for moving the track in order not to go out of bounds
  */
@@ -1309,7 +1326,7 @@ function generateTrack() {
 	}
 	for (var i = 0; i < 3; i++) {
 		prepare_object_rendering(skybox);
-		var scaleMat = utils.MakeScaleNuMatrix(trackScale, trackScale, trackScale);
+		var scaleMat = utils.MakeScaleMatrix(trackScale);
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 0, trackZpos[i]), scaleMat));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
 		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.transposeMatrix(utils.invertMatrix(utils.transposeMatrix(scaleMat))));
@@ -1566,9 +1583,10 @@ function drawScene() {
 
 		projectionMatrix = utils.multiplyMatrices(perspectiveMatrix, viewMatrix);
 
+		// sets up light values for the scene
 		prepare_light();
 
-		// draw rocks
+		// draws rocks
 		if (isStarting) {
 			isStarting = false;
 			startingRockBuffer();
@@ -1590,62 +1608,72 @@ function drawScene() {
 
 		// draws the track
 		generateTrack();
-
+		
+		//skybox common transformations
+		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		gl.uniformMatrix4fv(program.WMat, gl.FALSE, utils.identityMatrix());
+		
 		// draws the skybox front
 		prepare_object_rendering(skyboxFront);
-
-		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
+		render_skybox(0,30,1000+boatZ,-90,0,3);
+		/*
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, 1000 + boatZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(-90), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
+		
 		gl.uniform1i(program.textureUniform, 3);
-		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);*/
 
 		// draws the skybox back
 		prepare_object_rendering(skyboxBack);
-		//translate the image of y: 30 z: 100 , rotated by 90 degree on the X axis and then scaled up by 200
+		render_skybox(0, 30, -600 + boatZ,-90,180,9);
+		/*
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 30, -600 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 9);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		*/
 
 		// draws the skybox right of ship (left world)
 		prepare_object_rendering(skyboxLeft);
-		//translate the image of y: 30 x: -1000 , rotated by 90 degree on the X and y axis and then scaled up by 500
+		render_skybox(-800, 30, 200 + boatZ,-90,-90,4);
+		/*
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(-800, 30, 200 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(-90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 4);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		*/
 
 		// draws the skybox left of ship (right world)
 		prepare_object_rendering(skyboxRight);
-		//translate the image of y: 30 x: 100 , rotated by 90 degree on the X and Y axis and then scaled up by 200
+		render_skybox(800, 30, 200 + boatZ,-90,90,5);
+		/*
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(800, 30, 200 + boatZ), utils.multiplyMatrices(utils.multiplyMatrices(utils.MakeRotateYMatrix(90), utils.MakeRotateXMatrix(-90)), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 5);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		*/
 
 		// draws the skybox top
 		prepare_object_rendering(skyboxTop);
-		//translate the image of y: 170  , rotated by 90 degree on the X axis and scaled up by 200
+		render_skybox(0, 630, 200 + boatZ,180,0,6);
+		
+		/*
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, 630, 200 + boatZ), utils.multiplyMatrices(utils.MakeRotateXMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 6);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-
+		*/
 
 		// draws the skybox bottom
 		prepare_object_rendering(skyboxBottom)
-		//translate the image of y: -230, scaled up by 200
+		render_skybox(0, -770, 200 + boatZ,0,180,8);
+
+		/*
 		WVPmatrix = utils.multiplyMatrices(projectionMatrix, utils.multiplyMatrices(utils.MakeTranslateMatrix(0, -770, 200 + boatZ), utils.multiplyMatrices(utils.MakeRotateYMatrix(180), utils.MakeScaleMatrix(skyboxScale))));
 		gl.uniformMatrix4fv(program.WVPmatrixUniform, gl.FALSE, utils.transposeMatrix(WVPmatrix));
-		gl.uniformMatrix4fv(program.NmatrixUniform, gl.FALSE, utils.identityMatrix());
 		gl.uniform1i(program.textureUniform, 8);
 		gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+		*/
 
 		// draws the ship
 		prepare_object_rendering(boatMesh);
