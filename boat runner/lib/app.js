@@ -356,7 +356,6 @@ function alert2(message, title, buttonText) {
 #############################
 */
 
-//TODO: COMMENTARE ANCHE LE RIGHE DEGLI SHADER
 // Vertex shader
 var vs = `#version 300 es
 
@@ -625,7 +624,6 @@ function main() {
 }
 
 
-//TODO: ALL THIS
 var lastUpdateTime;
 var camVel = [0, 0, 0];
 var fSk = 500.0;
@@ -639,13 +637,8 @@ var ATdr = 5.5;
 var sBT = 1.0;
 var mBT = 3.0;
 var BTur = 5.0;
-var BTdr = 5.5;
 var Tfric = Math.log(0.000001);
-var sAS = 0.1;	// Not used yet
 var mAS = 108.0;
-var ASur = 1.0;	// Not used yet
-var ASdr = 0.5;	// Not used yet
-var trackZmulti = 10.0;
 var trackScale = 100.0;
 var trackZpos = [0, 200, 400];
 var skyboxScale = 800

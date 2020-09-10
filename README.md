@@ -18,5 +18,5 @@ A graphics engine made for a Computer graphics course. All the functions start f
     * -[x] ConeOut
     * -[x] Colore Faro
 * -[x] Interazione Web
-* -[ ] Documentazione
+* -[x] Documentazione
 
