@@ -428,8 +428,7 @@ void main() {
 	vec4 MoonDiffuse  = MoonCol * clamp(dot(normalize(fs_norm), moonDir),0.0,1.0);
 	float dimFact = clamp(lightDir.w * dot(normalize(fs_norm), lightDir.xyz),0.0,1.0);
 	vec4 DayDiffuse = vec4(clamp(texcol.rgb * dimFact,0.0,1.0),1);
-	color = vec4(clamp((DayDiffuse.xyz/5.0) + LampLight.xyz,0.0,1.0),1.0);
-	color = DayDiffuse + LampOn*LampDiffuse + MoonDiffuse;
+	color = clamp(DayDiffuse + LampOn*LampDiffuse + MoonDiffuse,0.0,1.0);
 }`;
 
 /** texture loader callback */
