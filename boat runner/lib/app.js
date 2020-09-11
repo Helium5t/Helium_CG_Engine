@@ -1456,9 +1456,9 @@ function drawScene() {
 		// computing boat velocities
 		boatAngVel = mAS * deltaT * rvy;
 
-		//  TODO: enrich the description here
 		vz = -vz;
-		// = 0.8 * deltaT * 60 * vz;
+		
+		// Quaternion to Euler Angle
 		if (vz > 0.1) {
 			if (preVz > 0.1) {
 				boatLinAcc = boatLinAcc + ATur * deltaT;
